@@ -1,6 +1,7 @@
 package com.example.tumao.myapplication;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         actv.setThreshold(1);//will start working from first character
         actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
         final TextView getQuote = findViewById(R.id.textView2);
+        final TextView clear = findViewById(R.id.textView3);
         actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -85,8 +87,20 @@ public class MainActivity extends AppCompatActivity {
                if(validation(actv)){
                    Util.showToast(mContext, "Please enter a stock name or symbol");
                }else{
-
+                   Intent i = new Intent(MainActivity.this, StockActivity.class);
+                   startActivity(i);
                }
+
+            }
+        });
+
+        clear.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Code here executes on main thread after user presses button
+                Log.i("onClick","clear");
+
+                    Intent i = new Intent(MainActivity.this, StockActivity.class);
+                    startActivity(i);
 
             }
         });
