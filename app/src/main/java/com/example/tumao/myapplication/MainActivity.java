@@ -1,5 +1,6 @@
 package com.example.tumao.myapplication;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -10,7 +11,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -24,7 +24,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
-//    String[] fruits = {"Apple", "Apple2","Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 String temp = listItem.toString();
                 String symbol = temp.substring(0,temp.indexOf("-"));
                 Log.i("ItemClick",symbol);
-                Toast.makeText(getApplicationContext(),(CharSequence)symbol, Toast.LENGTH_LONG).show();
+//                Toast.makeText(getApplicationContext(),(CharSequence)symbol, Toast.LENGTH_LONG).show();
                 actv.setText(symbol);
             }
         });
@@ -67,8 +66,11 @@ public class MainActivity extends AppCompatActivity {
                                       int before, int count) {
                 if(s.length() != 0){
                     Log.i("AutoChange",actv.getText().toString());
-                    jsonRequest(actv.getText().toString(), adapter,actv);
-                    adapter.notifyDataSetChanged();
+                    if(!validation(actv)){
+                        jsonRequest(actv.getText().toString(), adapter,actv);
+                        adapter.notifyDataSetChanged();
+                    }
+
                 }
 
             }
@@ -79,11 +81,27 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
                 Log.i("onClick","test");
-                jsonRequest(actv.getText().toString(), adapter,actv);
+                Context mContext = getApplicationContext();
+               if(validation(actv)){
+                   Util.showToast(mContext, "Please enter a stock name or symbol");
+               }else{
+
+               }
+
             }
         });
     }
 
+    public boolean validation(AutoCompleteTextView actv){
+//        int length = actv.getText().replace(/\s/g, '').length();
+        String text= actv.getText().toString();
+        int length = text.replaceAll("\\s","").length();
+        Log.i("length",length+"");
+        if (length == 0) {
+            return true;
+        }
+        return false;
+    }
     public void jsonRequest(String symbol, final ArrayAdapter<String> adapter,AutoCompleteTextView actv){
         if(symbol.contains("-")) return;
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/auto?input="+symbol;
