@@ -35,10 +35,10 @@ function submitSymbol(){
                         try{
                             jsonObj = JSON.parse(xmlhttp.responseText);
                              // alert(jsonObj);
-                            generateTable(jsonObj);
+                            generateHighStock(jsonObj);
                             console.log(jsonObj);
                         }catch(e){
-                            alert("JSON File Syntax Error");
+                            console.log("JSON File Syntax Error");
                             console.log(jsonObj);
                             console.log(e);
                             return null;
@@ -72,11 +72,13 @@ function testVariable(){
          console.log("no symbol");
        }
 }
+
+var timestampData = [];
 /*
  *Generate Stock Information Table
  *@para jsonObj JSON Object
  */
-function generateTable(jsonObj){
+function generateHighStock(jsonObj){
     if(jsonObj.hasOwnProperty('Error Message')){
 
     }else{
@@ -84,40 +86,36 @@ function generateTable(jsonObj){
         var array_values = jsonObj['Time Series (Daily)'];
         symbol = meta['2. Symbol'];
         ReDate = meta['3. Last Refreshed'];
-
         var count =0;
         for(var key in array_values){
-            if(count==0){
-                open = array_values[key]['1. open'];
-                close = array_values[key]['4. close'];
-                day_range = array_values[key]['3. low']+"-"+array_values[key]['2. high'];
-                volume = array_values[key]['5. volume'];
-            }
-            if(count == 1){
-                pre_close = array_values[key]['4. close'];
-            }
-            var temp_date = key.substring(5).replace(/-/g, "\/");
-            if(temp_date.length>=6) temp_date = temp_date.substr(0,5);
-            date.push(temp_date);
-            data1.push(parseFloat(array_values[key]['4. close']));
-            data2.push(parseFloat(array_values[key]['5. volume']));
-            max = Math.max(parseFloat(array_values[key]['4. close']),max);
-            min = Math.min(parseFloat(array_values[key]['4. close']),min);
-            volume_max = Math.max(parseFloat(array_values[key]['5. volume']),max);
-            if(count==126){
-                break;
-            }
+//            if(count==0){
+//                open = array_values[key]['1. open'];
+//                close = array_values[key]['4. close'];
+//                day_range = array_values[key]['3. low']+"-"+array_values[key]['2. high'];
+//                volume = array_values[key]['5. volume'];
+//            }
+//            if(count == 1){
+//                pre_close = array_values[key]['4. close'];
+//            }
+//            var temp_date = key.substring(5).replace(/-/g, "\/");
+//            if(temp_date.length>=6) temp_date = temp_date.substr(0,5);
+//            date.push(temp_date);
+//            data1.push(parseFloat(array_values[key]['4. close']));
+//            data2.push(parseFloat(array_values[key]['5. volume']));
+//            max = Math.max(parseFloat(array_values[key]['4. close']),max);
+//            min = Math.min(parseFloat(array_values[key]['4. close']),min);
+//            volume_max = Math.max(parseFloat(array_values[key]['5. volume']),max);
+                var temp = [new Date(key).getTime(), parseFloat(array_values[key]['4. close'])];
+            if(count==0) console.log(temp);
+            timestampData.push(temp);
             count++;
         }
+        console.log(timestampData);
+        timestampData.reverse();
 
-        data1.reverse();
-        data2.reverse();
-        date.reverse();
-        console.log(data1);
+        console.log(timestampData);
 
-        var change = (close - pre_close).toFixed(2);
-        var change_per = (change/pre_close*100).toFixed(2);
-        drawAreaAndVolume();
+        drawStock();
     }
 }
 
@@ -153,35 +151,7 @@ function fetchAllIndicator(symbol){
 
 
 }
-function fetchOneIndicator(symbol, indicator){
-    var index = getIndicator(indicator);
-    var number;
-    if(index == 3) number = 2;
-    else if(index == 7||index == 8) number = 3;
-    else number = 1;
-    $.ajax({
-        tryCount : 0,
-        retryLimit : 3,
-        url: 'http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/indicator?indicator=' + indicator + '&symbol=' + symbol + '&number='+number,
-        success: function(response){
-            jsonObjIndicator[index] = response;
-            console.log("return "+indicator);
-//            console.log(jsonObjIndicator[index]);
-        },
-          error: function(jqXHR, status, err){
-          // 响应失败的回调函数
-          console.log("error "+err);
-           this.tryCount++;
-           if (this.tryCount <= this.retryLimit) {
-               //try again
-               $.ajax(this);
-               return;
-           }
-           return;
-          },
-        async: true
-    });
-}
+
 function showChart(indicator){
     var index = getIndicator(indicator);
     var number;
@@ -196,68 +166,31 @@ function showChart(indicator){
     }
 
 }
-function drawAreaAndVolume(){
+function drawStock(){
     document.getElementById('container').style.visibility='visible';
-    console.log(date);
-    console.log(data1);
-    console.log(data2);
+    console.log(timestampData);
+
     var chartTitle = "Stock Price (" +ReDate+ ")";
-    var myChart = Highcharts.chart('container', {
-        chart: {
+//    var myChart =
+    var options = {
+          chart: {
             zoomType: 'x'
-        },
-
-        title: {
-            text: chartTitle
-        },
-        subtitle: {
-        useHTML:true,
-        text: "<a style=' text-decoration: none' target='_blank' href='https://www.alphavantage.co/' >Source: Alpha Vantage</a>"
-        },
-        xAxis: {
-            tickInterval:10,
-        },
-        yAxis: [{
-            title: {
-                text: 'Stock Price'
-            },
-
-         "min":min*0.5,
-        },{
-          "title": {
-                "text": 'Volume'
-            },
-
-          "opposite": true,
-          "max": volume_max*8
-        }],
-
-        series: [{
-            name: symbol,
+          },
+          title: {text: symbol + ' Stock Value'},
+          subtitle: {
+                  useHTML:true,
+                  text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>"
+                  },
+          series: [{
+            name: symbol + ' Stock Value',
             type: 'area',
-            threshold: null,
-            lineWidth: 1,
-            lineColor: 'red',
-            data: data1,
-            color: '#ff0000',
-            fillOpacity: 0.5,
-            "marker":{
-            "enabled":false
-            },
+            data: timestampData,
             tooltip: {
-            valueDecimals: 2
-        }
-
-        }, {
-            name: symbol+' Volume',
-            type: 'column',
-            color: '#ffffff',
-            yAxis: 1,
-            data: data2
-        }],
-        legend: {
-        },
-    });
+              valueDecimals: 2
+            }
+          }]
+        };
+     var myChart = Highcharts.stockChart('container', options);
 }
 /*function testMultiple, Draw different kind of charts*/
 function drawCharts(indicator, symbol, number){
