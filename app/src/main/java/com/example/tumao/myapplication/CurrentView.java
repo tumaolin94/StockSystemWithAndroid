@@ -8,8 +8,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -33,28 +37,68 @@ import java.util.Iterator;
 public class CurrentView  extends Fragment {
     static String[] itemTitle ={"Stock Symbol","Last Price","Change","Timestamp","Open","Close",
             "Day's Range","Volume","Indicators"};
+    static String[] indicators = {"Price","SMA","EMA","STOCH","RSI","ADX","CCI","BBANDS","MACD"};
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_current, container, false);
         ListView listview = (ListView)rootView.findViewById(R.id.listView);
-
+        final Context context = this.getContext();
         tableRequest("aapl",listview,this.getContext());
         View footView = inflater.inflate(R.layout.afterlist, null);
-        String testURL = "file:///android_asset/highchart.html";
+        final String testURL = "file:///android_asset/highchart.html";
         final WebView webView = (WebView)footView.findViewById(R.id.webView);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl(testURL);
         webView.post(new Runnable() {
             @Override
             public void run() {
-
+                Log.i("highChart",testURL);
                 webView.loadUrl("javascript:submitSymbol()");
             }
         });
 
+        webView.post(new Runnable() {
+                @Override
+                public void run() {
+
+                    webView.loadUrl("javascript:fetchAllIndicator('"+"aapl"+"')");
+                }
+        });
+
+
         listview.addFooterView(footView);
+        final Spinner spinner = footView.findViewById(R.id.spinner);
+        spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                // your code here
+                Util.showToast(context, spinner.getSelectedItem().toString());
+                webView.loadUrl("javascript:testVariable()");
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // your code here
+            }
+
+        });
+        final TextView change = footView.findViewById(R.id.change);
+        change.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Code here executes on main thread after user presses button
+                Log.i("onClick","change");
+                webView.post(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        webView.loadUrl("javascript:showChart('"+spinner.getSelectedItem().toString()+"')");
+                    }
+                });
+
+            }
+        });
         return rootView;
     }
     public void tableRequest(String symbol, final ListView listview, final Context context){

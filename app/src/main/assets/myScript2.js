@@ -62,7 +62,7 @@ function submitSymbol(){
         var date = [];
         var max = -1000000000;
         var min = 1000000000;
-        var volume_max = -1000000000;     
+        var volume_max = -1000000000;
 
 function testVariable(){
     if(symbol != null){
@@ -74,8 +74,8 @@ function testVariable(){
 }
 /*
  *Generate Stock Information Table
- *@para jsonObj JSON Object 
- */ 
+ *@para jsonObj JSON Object
+ */
 function generateTable(jsonObj){
     if(jsonObj.hasOwnProperty('Error Message')){
 
@@ -84,7 +84,7 @@ function generateTable(jsonObj){
         var array_values = jsonObj['Time Series (Daily)'];
         symbol = meta['2. Symbol'];
         ReDate = meta['3. Last Refreshed'];
-  
+
         var count =0;
         for(var key in array_values){
             if(count==0){
@@ -98,7 +98,7 @@ function generateTable(jsonObj){
             }
             var temp_date = key.substring(5).replace(/-/g, "\/");
             if(temp_date.length>=6) temp_date = temp_date.substr(0,5);
-            date.push(temp_date);            
+            date.push(temp_date);
             data1.push(parseFloat(array_values[key]['4. close']));
             data2.push(parseFloat(array_values[key]['5. volume']));
             max = Math.max(parseFloat(array_values[key]['4. close']),max);
@@ -114,7 +114,7 @@ function generateTable(jsonObj){
         data2.reverse();
         date.reverse();
         console.log(data1);
-        
+
         var change = (close - pre_close).toFixed(2);
         var change_per = (change/pre_close*100).toFixed(2);
         drawAreaAndVolume();
@@ -206,13 +206,13 @@ function drawAreaAndVolume(){
         chart: {
             zoomType: 'x'
         },
-        
+
         title: {
             text: chartTitle
         },
         subtitle: {
         useHTML:true,
-        text: "<a style=' text-decoration: none' target='_blank' href='https://www.alphavantage.co/' >Source: Alpha Vantage</a>" 
+        text: "<a style=' text-decoration: none' target='_blank' href='https://www.alphavantage.co/' >Source: Alpha Vantage</a>"
         },
         xAxis: {
             tickInterval:10,
@@ -221,17 +221,17 @@ function drawAreaAndVolume(){
             title: {
                 text: 'Stock Price'
             },
-            
+
          "min":min*0.5,
         },{
           "title": {
                 "text": 'Volume'
             },
-          
+
           "opposite": true,
           "max": volume_max*8
         }],
-        
+
         series: [{
             name: symbol,
             type: 'area',
@@ -265,7 +265,7 @@ function drawCharts(indicator, symbol, number){
     if(number=='3'){
         url = "https://www.alphavantage.co/query?function="+indicator+"&symbol="+symbol+"&interval=daily&time_period=5&series_type=close&nbdevup=3&nbdevdn=3&apikey=FEY146OML7L2A34X";
     }else if(number=='2'){
-        url = "https://www.alphavantage.co/query?function="+indicator+"&symbol="+symbol+"&interval=daily&slowkmatype=1&slowdmatype=1&apikey=FEY146OML7L2A34X";        
+        url = "https://www.alphavantage.co/query?function="+indicator+"&symbol="+symbol+"&interval=daily&slowkmatype=1&slowdmatype=1&apikey=FEY146OML7L2A34X";
     }else if(number=='1'){
         url = "https://www.alphavantage.co/query?function="+indicator+"&symbol="+symbol+"&interval=daily&time_period=10&series_type=close&apikey=FEY146OML7L2A34X";
     }else{
@@ -312,7 +312,7 @@ function generateChart(index, indicator, number){
         var fullname = meta['2: Indicator']; //full name
         var data_values = jsonObj['Technical Analysis: ' + indicator]; //full size data
         var meta_date = meta['3: Last Refreshed'];
-        
+
         var date = new Array();
         var key_array = new Array();
         var data_array = new Array();
@@ -346,13 +346,13 @@ function generateChart(index, indicator, number){
         chart: {
             zoomType: 'x'
         },
-        
+
         title: {
             text: fullname
         },
         subtitle: {
         useHTML:true,
-        text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>" 
+        text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>"
         },
         xAxis: {
             tickInterval:10,
@@ -363,11 +363,11 @@ function generateChart(index, indicator, number){
                 text: indicator
             },
             "labels":{
-            
+
          },
 
         }],
-        
+
         series: [],
         legend: {
 
@@ -377,7 +377,7 @@ function generateChart(index, indicator, number){
              myChart.addSeries({
                 threshold: null,
                 lineWidth: 1.5,
-                name: symbol + ' '+ key_array[i],
+                name: symbol + ''+ key_array[i],
                 data: data_array[i],
                 marker:{
 
