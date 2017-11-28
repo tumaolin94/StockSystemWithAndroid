@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>JSON TEST</title>
+    <script type="text/javascript">
+    function viewJSON(what){
+      var URL = what.URL.value;
+      function loadJSON(url){
+        if(window.XMLHttpRequest){
+          xmlhttp=new XMLHttpRequest();
+        }else{
+          xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");  
+        }
+        if(url.length==0){
+          alert('Please enter a valid url!');
+          throw "No url address";
+          return;
+        }
+        xmlhttp.open("GET",url,false);
+        xmlhttp.send();
+
+        if(xmlhttp.status==404){
+          alert('Please enter a valid url!');
+          throw "No such url address";
+          return;
+        }
+        try{
+          jsonObj = JSON.parse(xmlhttp.responseText);
+        }catch(e){
+          alert('Not Valid JSON File!');
+          throw "Not Valid JSON File!";
+          return;
+        }
+        if(jsonObj["Mainline"] == undefined){
+          alert('Not Valid File!');
+          throw "No Mainline in this File";
+          return;
+        }
+        tables=jsonObj.Mainline.Table;
+        row = tables.Row
+        if(!Array.isArray(row)||row.length==0){
+          alert('ERROR: No Airline Company in the file!');
+          throw "No Row!";
+        }
+        return jsonObj;
+      }
+
+      jsonObj = loadJSON(URL);
+
+      if (window.ActiveXObject){
+        if (jsonObj.parseError.errorCode != 0) {
+          var myErr = jsonObj.parseError;
+          generateError(jsonObj);
+          hWin = window.open("", "Error", "height=300,width=340");
+        }else{
+          generateHTML(jsonObj);
+          hWin = window.open("", "Assignment4", "height=800,width=1100");
+          hWin.document.write(html_text); 
+          }  
+        }else{
+          jsonObj.onload=generateHTML(jsonObj);
+          hWin = window.open("", "Assignment4", "height=800,width=1100");
+          hWin.document.write(html_text);  
+        } 
+        hWin.document.close();  
+      }
+
+      function generateHTML(jsonObj){
+        root=jsonObj.DocumentElement;
+        html_text="<html><head><title>JSON Parse Result</title></head><body>";
+        html_text+="<table border='2'>";
+
+        tables=jsonObj.Mainline.Table;
+
+        json_header = tables.Header
+        header_data = json_header.Data
+        html_text+="<tbody>";
+        html_text+="<tr>";
+        x=0;y=0;
+        console.log("11111");
+        for(i=0;i<header_data.length;i++){
+          header=header_data[i];
+          console.log("The %s ", header);          
+          html_text+="<th style=\"min-width:20px;\">"+header+"</th>";    
+        }
+        html_text+="</tr>";
+        row = tables.Row;
+
+        for(i=0;i<row.length;i++){
+          planeNodeList = row[i]
+          html_text+="<tr style=\"height:50px;\">";
+          var temp_keys = Object.keys(planeNodeList);
+          for(j=0;j<temp_keys.length;j++){
+            html_text+="<td style=\"min-height:50px;\">";
+            if(j==2){
+              html_text+="<ul>";
+              hubs = planeNodeList["Hubs"];
+              hub = hubs.Hub;
+               for(hl=0;hl<hub.length;hl++){
+                 if(hl==0){
+                    html_text+="<li style=\"font-weight:bold;\">";
+                    html_text+=hub[hl];
+                    html_text+="</li>";
+                 }else{
+                 html_text+="<li>";
+                 html_text+=hub[hl];
+                 html_text+="</li>";
+                }
+              }
+              html_text+="</ul>";
+            }else if(j==4){
+              html_text+="<a href=\""+planeNodeList[temp_keys[j]];
+              html_text+="\">"+planeNodeList[temp_keys[j]]+"</a>";
+              
+            }else if(j==5){
+              photo = planeNodeList[temp_keys[j]];
+              if(photo.length!=0){
+                html_text+="<img src='"+ planeNodeList[temp_keys[j]] +"' width='"+320+"' height='"+180+"'>";  
+              }else{
+                html_text+=photo;
+              }
+
+            }else{
+              html_text+=planeNodeList[temp_keys[j]];
+            }
+            html_text+="</td>";
+          }
+
+          html_text+="</tr>";
+        }
+                       
+          html_text+="</tbody>"; 
+          html_text+="</table>";           
+          html_text+="</body></html>";  
+      }
+    
+
+
+
+    </script>
+	</head>
+<body style="text-align: center;
+         margin-top: 10%">
+
+  <h3 style="
+  font-family: &quot;Times New Roman&quot;,Serif;
+  font-weight: 700;
+  ">Enter URL for Airlines List JSON File</h3>
+  
+  <form id="form1" method="POST">
+    <input id="f1" type="text" name="URL" value=""><br><br>
+    <input type="button" onclick="viewJSON(this.form)" value="Submit Query">
+  </form>
+  </body>
+</html>
