@@ -42,10 +42,18 @@ public class CurrentView  extends Fragment {
 
         tableRequest("aapl",listview,this.getContext());
         View footView = inflater.inflate(R.layout.afterlist, null);
-        String testURL = "file:///android_asset/hw4.html";
-        WebView webView = (WebView)footView.findViewById(R.id.webView);
+        String testURL = "file:///android_asset/highchart.html";
+        final WebView webView = (WebView)footView.findViewById(R.id.webView);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl(testURL);
+        webView.post(new Runnable() {
+            @Override
+            public void run() {
+
+                webView.loadUrl("javascript:submitSymbol()");
+            }
+        });
+
         listview.addFooterView(footView);
         return rootView;
     }
