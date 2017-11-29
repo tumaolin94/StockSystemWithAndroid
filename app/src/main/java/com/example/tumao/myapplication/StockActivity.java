@@ -1,5 +1,6 @@
 package com.example.tumao.myapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -32,14 +33,30 @@ public class StockActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stock);
-
+        Intent intent =getIntent();
+        //getXxxExtra方法获取Intent传递过来的数据
+        String symbol=intent.getStringExtra("data");
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle("AAPL");
+        toolbar.setTitle(symbol);
         setSupportActionBar(toolbar);
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-
+//        Bundle bundle = new Bundle();
+//        bundle.putString("data",symbol);
+//        CurrentView cv = new CurrentView();
+//        HistoricalView hv = new HistoricalView();
+//        NewsView nv = new NewsView();
+//        cv.setArguments(bundle);
+//        hv.setArguments(bundle);
+//        nv.setArguments(bundle);
+        FragmentManager fm = getSupportFragmentManager();
+//        FragmentTransaction transaction  = fm.beginTransaction();
+//        transaction.add(R.id.container, cv);
+//        transaction.add(R.id.container, hv);
+//        transaction.add(R.id.container, nv);
+//        transaction.commit();
+        mSectionsPagerAdapter = new SectionsPagerAdapter(fm);
+        mSectionsPagerAdapter.setSymbol(symbol);
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -76,47 +93,14 @@ public class StockActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-//    /**
-//     * A placeholder fragment containing a simple view.
-//     */
-//    public static class PlaceholderFragment extends Fragment {
-//        /**
-//         * The fragment argument representing the section number for this
-//         * fragment.
-//         */
-//        private static final String ARG_SECTION_NUMBER = "section_number";
-//
-//        public PlaceholderFragment() {
-//        }
-//
-//        /**
-//         * Returns a new instance of this fragment for the given section
-//         * number.
-//         */
-//        public static PlaceholderFragment newInstance(int sectionNumber) {
-//            PlaceholderFragment fragment = new PlaceholderFragment();
-//            Bundle args = new Bundle();
-//            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-//            fragment.setArguments(args);
-//            return fragment;
-//        }
-//
-//        @Override
-//        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-//                                 Bundle savedInstanceState) {
-//            View rootView = inflater.inflate(R.layout.fragment_current, container, false);
-//            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-//            textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
-//            return rootView;
-//        }
-//    }
+
 
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
-
+        String symbol = "";
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
@@ -125,14 +109,14 @@ public class StockActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             switch (position){
                 case 0:
-                    CurrentView tab1 = new CurrentView();
-                    return tab1;
+//                    CurrentView tab1 = new CurrentView();
+                    return CurrentView.newInstance(symbol);
                 case 1:
-                    HistoricalView tab2  = new HistoricalView();
-                    return tab2;
+//                    HistoricalView tab2  = new HistoricalView();
+                    return HistoricalView.newInstance(symbol);
                 case 2:
-                    NewsView tab3 = new NewsView();
-                    return tab3;
+//                    NewsView tab3 = new NewsView();
+                    return NewsView.newInstance(symbol);
                 default:
                     return null;
             }
@@ -154,6 +138,13 @@ public class StockActivity extends AppCompatActivity {
                     return "NEWS";
             }
             return null;
+        }
+
+        public String getSymbol(){
+            return this.symbol;
+        }
+        public void setSymbol(String symbol){
+            this.symbol = symbol;
         }
     }
 }

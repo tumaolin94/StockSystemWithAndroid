@@ -25,12 +25,31 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //Creating the instance of ArrayAdapter containing list of fruit names
+        //TODO:
+//        FacebookSdk.sdkInitialize(getApplicationContext());
+//        String keyHash = FacebookSdk.getApplicationSignature(getApplicationContext());
+//        Log.i("keyHash",keyHash);
+//        try {
+//            PackageInfo info = getPackageManager().getPackageInfo(
+//                    "com.example.tumao.myapplication",
+//                    PackageManager.GET_SIGNATURES);
+//
+//            for (Signature signature : info.signatures) {
+//                MessageDigest md = MessageDigest.getInstance("SHA");
+//                md.update(signature.toByteArray());
+//                Log.d("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+//            }
+//        } catch (PackageManager.NameNotFoundException e) {
+//
+//        } catch (NoSuchAlgorithmException e) {
+//
+//        }
+//        //Creating the instance of ArrayAdapter containing list of fruit names
         final ArrayAdapter<String> adapter = new SingleArrayAdapter
                 (this, android.R.layout.select_dialog_item, new String[0]);
         //Getting the instance of AutoCompleteTextView
@@ -100,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("onClick","clear");
 
                     Intent i = new Intent(MainActivity.this, StockActivity.class);
+                    i.putExtra("data", "AAPL");
                     startActivity(i);
 
             }

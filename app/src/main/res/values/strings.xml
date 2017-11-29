@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">My Application</string>
     <string name="facebook_app_id">128480647842857</string>
+    <string name="fb_login_protocol_scheme">fb128480647842857</string>
     <string name="title_activity_stock">StockActivity</string>
     <string name="tab_text_1">Tab 1</string>
     <string name="tab_text_2">Tab 2</string>

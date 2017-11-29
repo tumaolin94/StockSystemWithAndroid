@@ -13,7 +13,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.Toast;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -27,22 +26,40 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Created by tumao on 2017/11/26.
  */
 
 public class NewsView  extends Fragment {
+    View rootView;
+    public NewsView(){}
+    public static NewsView newInstance(String symbol){
+        NewsView fragment = new NewsView();
+        Bundle args = new Bundle();
+        args.putString("symbol",symbol);
+        fragment.setArguments(args);
+        return fragment;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_news, container, false);
+        if(rootView!=null) return rootView;
+        String str = getArguments().getString("symbol");
+        final String symbol =str;
+        rootView = inflater.inflate(R.layout.fragment_news, container, false);
         final ListView newsView = (ListView)rootView.findViewById(R.id.newsView);
         final Context context = this.getContext();
-        newsRequest("AAPL",newsView,context);
+        newsRequest(symbol,newsView,context);
         newsView.setOnItemClickListener(new OnItemClickListener()
         {
             @Override
@@ -72,7 +89,7 @@ public class NewsView  extends Fragment {
                     public void onResponse(JSONObject response) {
                         try {
                             if(response.has("Error Message")){
-                                Log.e("beforeRequest",response.toString());
+                                Log.e("NewsBeforeRequest",response.toString());
                                 return;
                             }
                             JSONObject array_values = response.getJSONObject("rss");
@@ -92,7 +109,7 @@ public class NewsView  extends Fragment {
                                     Log.i("title",title);
                                     titleList.add(title);
                                     linkList.add(link);
-                                    dateList.add(date);
+                                    dateList.add(myFormatDate(date));
                                     autohrList.add(author);
                                     count++;
                                     if(count == 5 ) break;
@@ -139,5 +156,32 @@ public class NewsView  extends Fragment {
         jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(10000,3,DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         RequestQueue requestQueue = Volley.newRequestQueue(this.getContext());
         requestQueue.add(jsObjRequest);
+    }
+
+    public static String myFormatDate(String date){
+        String pattern = "EEE, dd MMM yyyy HH:mm:ss Z";
+        DateFormat from = new SimpleDateFormat(pattern, Locale.US);
+        from.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        DateFormat to = new SimpleDateFormat(pattern, Locale.US);
+        to.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
+
+        Date newDate = null;
+        try{
+            newDate = from.parse(date);
+            date = to.format(newDate);
+            date = date.substring(0,date.length() - 6);
+        }catch (ParseException e){
+            e.printStackTrace();
+            Log.e("ParseException", e.toString());
+        }
+
+        TimeZone zone = TimeZone.getTimeZone("America/Los_Angeles");
+        if(zone.useDaylightTime()){
+            date += " PST";
+        }else{
+            date += " PDT";
+        }
+        return date;
     }
 }

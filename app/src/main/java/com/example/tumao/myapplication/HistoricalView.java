@@ -15,11 +15,22 @@ import android.webkit.WebViewClient;
  */
 
 public class HistoricalView  extends Fragment {
+    View rootView;
+    public HistoricalView(){}
+    public static HistoricalView newInstance(String symbol){
+        HistoricalView fragment = new HistoricalView();
+        Bundle args = new Bundle();
+        args.putString("symbol",symbol);
+        fragment.setArguments(args);
+        return fragment;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_his, container, false);
-
+        if(rootView!=null) return rootView;
+        rootView = inflater.inflate(R.layout.fragment_his, container, false);
+        String str = getArguments().getString("symbol");
+        final String symbol = str;
         final Context context = this.getContext();
         final String testURL = "file:///android_asset/highstock.html";
         final WebView webView = (WebView)rootView.findViewById(R.id.hisView);
@@ -29,23 +40,10 @@ public class HistoricalView  extends Fragment {
         webView.setWebViewClient(new WebViewClient(){
             public void onPageFinished(WebView view, String url){
                 Log.i("Historical",testURL);
-                webView.loadUrl("javascript:submitSymbol()");
+                webView.loadUrl("javascript:submitSymbol('"+symbol+"')");
             }
         });
-//        webView.post(new Runnable() {
-//            @Override
-//            public void run() {
-//                Log.i("Historical",testURL);
-//                webView.loadUrl("javascript:submitSymbol()");
-//            }
-//        });
-//        webView.post(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//                webView.loadUrl("javascript:fetchAllIndicator('"+"aapl"+"')");
-//            }
-//        });
+
         return rootView;
     }
 }

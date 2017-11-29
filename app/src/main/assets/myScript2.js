@@ -12,8 +12,8 @@ function formReset(){
     document.getElementById('container').style.visibility='hidden';
 }
 
-function submitSymbol(){
-    var symbol = "aapl";
+function submitSymbol(symbol){
+//    var symbol = "aapl";
     if(symbol==""){
         alert("Please enter a symbol");
         return;

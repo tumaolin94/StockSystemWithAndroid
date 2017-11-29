@@ -12,8 +12,8 @@ function formReset(){
     document.getElementById('container').style.visibility='hidden';
 }
 
-function submitSymbol(){
-    var symbol = "aapl";
+function submitSymbol(symbol){
+//    var symbol = "aapl";
     if(symbol==""){
         alert("Please enter a symbol");
         return;
@@ -124,6 +124,57 @@ function generateTable(jsonObj){
 function drawPrice(){
     drawAreaAndVolume(ReDate, symbol, date,data1,data2,min,max,volume_max);
 }
+function fetchFB(indicator){
+        var index = getIndicator(indicator);
+        console.log("index: "+index);
+
+                var number;
+                if(index == 3) number = 2;
+                else if(index == 7||index == 8) number = 3;
+                else number = 1;
+
+                var dataStr = generateFBChart(index, indicator, number);
+
+//        var chart=$("#container").highcharts();
+//        var dataStr = chart.userOptions;
+
+        optionsStr = JSON.stringify(dataStr);
+        console.log(optionsStr);
+//            var optionsStr = JSON.stringify(dataStr);
+        var Url = 'http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/fb';
+        var exportUrl = 'http://export.highcharts.com/';
+        var requestrul = Url + "?options=" + encodeURIComponent(optionsStr);
+    //    var requestrul = dataString;
+        console.log(requestrul);
+        var returnurl = '';
+        $.ajax({
+                tryCount : 0,
+                retryLimit : 3,
+                url: requestrul,
+                async: false,
+                contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                responseType: 'text',
+                success: function(response){
+                    console.log(response);
+                    console.log(exportUrl + response);
+                    returnurl = exportUrl + response;
+//                    return returnurl;
+                },
+                  error: function(jqXHR, status, err){
+                  // 响应失败的回调函数
+                  console.log("error "+err+ " " +status+" "+jqXHR.readyState+" "+jqXHR.status);
+                   this.tryCount++;
+                   if (this.tryCount <= this.retryLimit) {
+                       //try again
+                       $.ajax(this);
+                       return;
+                   }
+                   return;
+                  },
+
+            });
+        return returnurl;
+}
 
 function getIndicator(indicator){
     switch(indicator){
@@ -155,6 +206,7 @@ function fetchAllIndicator(symbol){
 }
 function fetchOneIndicator(symbol, indicator){
     var index = getIndicator(indicator);
+    console.log("index: "+index);
     var number;
     if(index == 3) number = 2;
     else if(index == 7||index == 8) number = 3;
@@ -201,7 +253,7 @@ function drawAreaAndVolume(){
     console.log(date);
     console.log(data1);
     console.log(data2);
-    var chartTitle = "Stock Price (" +ReDate+ ")";
+    var chartTitle = symbol+" Stock Price and Volume";
     var myChart = Highcharts.chart('container', {
         chart: {
             zoomType: 'x'
@@ -259,6 +311,63 @@ function drawAreaAndVolume(){
         },
     });
 }
+
+function fetchFBPrice(){
+    var chartTitle = symbol+" Stock Price and Volume";
+    var myChart = Highcharts.chart('container', {
+        chart: {
+            zoomType: 'x'
+        },
+        title: {
+            text: chartTitle
+        },
+        subtitle: {
+        useHTML:true,
+        text: "<a style=' text-decoration: none' target='_blank' href='https://www.alphavantage.co/' >Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+            tickInterval:10,
+        },
+        yAxis: [{
+            title: {
+                text: 'Stock Price'
+            },
+         "min":min*0.5,
+        },{
+          "title": {
+                "text": 'Volume'
+            },
+
+          "opposite": true,
+          "max": volume_max*8
+        }],
+        series: [{
+            name: symbol,
+            type: 'area',
+            threshold: null,
+            lineWidth: 1,
+            lineColor: 'red',
+            data: data1,
+            color: '#ff0000',
+            fillOpacity: 0.5,
+            "marker":{
+            "enabled":false
+            },
+            tooltip: {
+            valueDecimals: 2
+        }
+        }, {
+            name: symbol+' Volume',
+            type: 'column',
+            color: '#ffffff',
+            yAxis: 1,
+            data: data2
+        }],
+    });
+    console.log(myChart);
+    return myChart.userOptions;
+}
+
 /*function testMultiple, Draw different kind of charts*/
 function drawCharts(indicator, symbol, number){
     var url = "";
@@ -384,4 +493,280 @@ function generateChart(index, indicator, number){
             }
             });
         }
+}
+
+function generateFBChart(index, indicator, number){
+        if(index == 0) return fetchFBPrice();
+        if(number == 2) return generateFBTwoChart(index, indicator, number);
+        if(number == 3) return generateFBThreeChart(index, indicator, number);
+        var jsonObj = JSON.parse(jsonObjIndicator[index]);
+        if(!jsonObj.hasOwnProperty('Meta Data')) return;
+//        console.log(jsonObj);
+        var meta = jsonObj['Meta Data'];
+//        console.log(meta);
+        var symbol = meta['1: Symbol'];
+        var fullname = meta['2: Indicator']; //full name
+        var data_values = jsonObj['Technical Analysis: ' + indicator]; //full size data
+        var meta_date = meta['3: Last Refreshed'];
+
+        var date = new Array();
+        var key_array = new Array();
+        var data_array = new Array();
+        var count = 0;
+        for(var i=0;i<parseInt(number);i++){
+            data_array[i] = new Array();
+
+        }
+        for(var key in data_values[meta_date]){
+            console.log(key);
+            key_array.push(key);
+        }
+
+        for(var key in data_values) {
+                   var temp_date = key.substring(5).replace(/-/g, "\/");
+                    if(temp_date.length>=6) temp_date = temp_date.substr(0,5);
+                    date.push(temp_date);
+                    for(var i=0;i<key_array.length;i++){
+                        data_array[i].push(parseFloat(data_values[key][key_array[i]]));
+                    }
+                    if(count == 126) break;
+                    count = count + 1;
+                }
+
+      date.reverse();
+
+        for(var i=0;i<parseInt(number);i++){
+            data_array[i].reverse();
+        }
+      var myChart = Highcharts.chart('container', {
+        chart: {
+            zoomType: 'x'
+        },
+
+        title: {
+            text: fullname
+        },
+        subtitle: {
+        useHTML:true,
+        text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+            tickInterval:10,
+
+        },
+        yAxis: [{
+            title: {
+                text: indicator
+            },
+            "labels":{
+
+         },
+
+        }],
+        series: [{
+            threshold: null,
+            lineWidth: 1.5,
+            name: symbol + ' ' + key_array[0],
+            data: data_array[0],
+            marker: {
+              enabled: false,
+            }
+          }],
+        legend: {
+
+        },
+    });
+        console.log(myChart);
+        return myChart.userOptions;
+}
+function generateFBThreeChart(index, indicator, number){
+        if(index == 0) return fetchFBPrice();
+        var jsonObj = JSON.parse(jsonObjIndicator[index]);
+        if(!jsonObj.hasOwnProperty('Meta Data')) return;
+//        console.log(jsonObj);
+        var meta = jsonObj['Meta Data'];
+//        console.log(meta);
+        var symbol = meta['1: Symbol'];
+        var fullname = meta['2: Indicator']; //full name
+        var data_values = jsonObj['Technical Analysis: ' + indicator]; //full size data
+        var meta_date = meta['3: Last Refreshed'];
+
+        var date = new Array();
+        var key_array = new Array();
+        var data_array = new Array();
+        var count = 0;
+        for(var i=0;i<parseInt(number);i++){
+            data_array[i] = new Array();
+
+        }
+        for(var key in data_values[meta_date]){
+            console.log(key);
+            key_array.push(key);
+        }
+
+        for(var key in data_values) {
+                   var temp_date = key.substring(5).replace(/-/g, "\/");
+                    if(temp_date.length>=6) temp_date = temp_date.substr(0,5);
+                    date.push(temp_date);
+                    for(var i=0;i<key_array.length;i++){
+                        data_array[i].push(parseFloat(data_values[key][key_array[i]]));
+                    }
+                    if(count == 126) break;
+                    count = count + 1;
+                }
+
+      date.reverse();
+
+        for(var i=0;i<parseInt(number);i++){
+            data_array[i].reverse();
+        }
+      var myChart = Highcharts.chart('container', {
+        chart: {
+            zoomType: 'x'
+        },
+
+        title: {
+            text: fullname
+        },
+        subtitle: {
+        useHTML:true,
+        text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+            tickInterval:10,
+
+        },
+        yAxis: [{
+            title: {
+                text: indicator
+            },
+            "labels":{
+
+         },
+
+        }],
+          series: [{
+            threshold: null,
+            lineWidth: 1.5,
+            name: symbol + ' ' + key_array[0],
+            data: data_array[0],
+            marker: {
+              enabled: false,
+            },
+          }, {
+            threshold: null,
+            lineWidth: 1.5,
+            name: symbol + ' ' + key_array[1],
+            data: data_array[1],
+            marker: {
+              enabled: false,
+            },
+          }, {
+            threshold: null,
+            lineWidth: 1.5,
+            name: symbol + ' ' + key_array[2],
+            data: data_array[2],
+            marker: {
+              enabled: false,
+            },
+          }],
+        legend: {
+
+        },
+    });
+
+        console.log(myChart);
+        return myChart.userOptions;
+}
+function generateFBTwoChart(index, indicator, number){
+        if(index == 0) return fetchFBPrice();
+        var jsonObj = JSON.parse(jsonObjIndicator[index]);
+        if(!jsonObj.hasOwnProperty('Meta Data')) return;
+//        console.log(jsonObj);
+        var meta = jsonObj['Meta Data'];
+//        console.log(meta);
+        var symbol = meta['1: Symbol'];
+        var fullname = meta['2: Indicator']; //full name
+        var data_values = jsonObj['Technical Analysis: ' + indicator]; //full size data
+        var meta_date = meta['3: Last Refreshed'];
+
+        var date = new Array();
+        var key_array = new Array();
+        var data_array = new Array();
+        var count = 0;
+        for(var i=0;i<parseInt(number);i++){
+            data_array[i] = new Array();
+
+        }
+        for(var key in data_values[meta_date]){
+            console.log(key);
+            key_array.push(key);
+        }
+
+        for(var key in data_values) {
+                   var temp_date = key.substring(5).replace(/-/g, "\/");
+                    if(temp_date.length>=6) temp_date = temp_date.substr(0,5);
+                    date.push(temp_date);
+                    for(var i=0;i<key_array.length;i++){
+                        data_array[i].push(parseFloat(data_values[key][key_array[i]]));
+                    }
+                    if(count == 126) break;
+                    count = count + 1;
+                }
+
+      date.reverse();
+
+        for(var i=0;i<parseInt(number);i++){
+            data_array[i].reverse();
+        }
+      var myChart = Highcharts.chart('container', {
+        chart: {
+            zoomType: 'x'
+        },
+
+        title: {
+            text: fullname
+        },
+        subtitle: {
+        useHTML:true,
+        text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>"
+        },
+        xAxis: {
+            tickInterval:10,
+
+        },
+        yAxis: [{
+            title: {
+                text: indicator
+            },
+            "labels":{
+
+         },
+
+        }],
+
+        series: [{
+                    threshold: null,
+                    lineWidth: 1.5,
+                    name: symbol + ' ' + key_array[0],
+                    data: data_array[0],
+                    marker: {
+                      enabled: false,
+                    },
+                  }, {
+                    threshold: null,
+                    lineWidth: 1.5,
+                    name: symbol + ' ' + key_array[1],
+                    data: data_array[1],
+                    marker: {
+                      enabled: false,
+                    },
+                  }],
+        legend: {
+
+        },
+    });
+
+        console.log(myChart);
+        return myChart.userOptions;
 }

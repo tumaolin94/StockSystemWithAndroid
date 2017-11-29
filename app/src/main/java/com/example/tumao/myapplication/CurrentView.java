@@ -1,15 +1,18 @@
 package com.example.tumao.myapplication;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
@@ -22,6 +25,12 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.ShareDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +39,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+
 /**
  * Created by tumao on 2017/11/26.
  */
@@ -38,15 +48,30 @@ public class CurrentView  extends Fragment {
     static String[] itemTitle ={"Stock Symbol","Last Price","Change","Timestamp","Open","Close",
             "Day's Range","Volume","Indicators"};
     static String[] indicators = {"Price","SMA","EMA","STOCH","RSI","ADX","CCI","BBANDS","MACD"};
+    View rootView;
+    private ShareDialog shareDialog;
+    private CallbackManager callbackManager;
+    public CurrentView(){}
+    public static CurrentView newInstance(String symbol){
+        CurrentView cv = new CurrentView();
+        Bundle args = new Bundle();
+        args.putString("symbol",symbol);
+        cv.setArguments(args);
+        return cv;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        if(rootView!=null) return rootView;
 
-        View rootView = inflater.inflate(R.layout.fragment_current, container, false);
+        String str = getArguments().getString("symbol");
+        final String symbol = str;
+        rootView = inflater.inflate(R.layout.fragment_current, container, false);
         ListView listview = (ListView)rootView.findViewById(R.id.listView);
         final Context context = this.getContext();
-        tableRequest("aapl",listview,this.getContext());
+        tableRequest(symbol,listview,this.getContext());
         View footView = inflater.inflate(R.layout.afterlist, null);
+        ImageView fb = (ImageView)rootView.findViewById(R.id.imageView);
         final String testURL = "file:///android_asset/highchart.html";
         final WebView webView = (WebView)footView.findViewById(R.id.webView);
         webView.getSettings().setJavaScriptEnabled(true);
@@ -55,7 +80,7 @@ public class CurrentView  extends Fragment {
             @Override
             public void run() {
                 Log.i("highChart",testURL);
-                webView.loadUrl("javascript:submitSymbol()");
+                webView.loadUrl("javascript:submitSymbol('"+symbol+"')");
             }
         });
 
@@ -63,7 +88,7 @@ public class CurrentView  extends Fragment {
                 @Override
                 public void run() {
 
-                    webView.loadUrl("javascript:fetchAllIndicator('"+"aapl"+"')");
+                    webView.loadUrl("javascript:fetchAllIndicator('"+symbol+"')");
                 }
         });
 
@@ -97,6 +122,31 @@ public class CurrentView  extends Fragment {
                     }
                 });
 
+            }
+        });
+        initFacebook();
+        fb.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(final View arg0) {
+//                String url = "";
+                Log.i("facebook","facebook");
+//                ShareLinkContent content = new ShareLinkContent.Builder()
+//                        .setContentUrl(Uri.parse("https://developers.facebook.com"))
+//                        .build();
+//                javascript:fetchFB('SMA')
+
+                webView.evaluateJavascript("javascript:fetchFB('"+spinner.getSelectedItem().toString()+"')", new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String value) {
+                        //此处为 js 返回的结果
+                        Log.i("returnJS",value);
+                        shareToFacebook(arg0,value.substring(1,value.length()-1));
+                    }
+                });
+
+//                String url = "http://export.highcharts.com/charts/chart.771f84b5a42f4d7894c5f7dbeba8edec.png";
+//                shareToFacebook(arg0,url);
             }
         });
         return rootView;
@@ -201,7 +251,41 @@ public class CurrentView  extends Fragment {
         RequestQueue requestQueue = Volley.newRequestQueue(this.getContext());
         requestQueue.add(jsObjRequest);
     }
+    public void shareToFacebook(View view,String url) {
+        Log.i("enterFB",url);
+        //这里分享一个链接，更多分享配置参考官方介绍：https://developers.facebook.com/docs/sharing/android
+        if (ShareDialog.canShow(ShareLinkContent.class)) {
+            ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                    .setContentUrl(Uri.parse(url))
+                    .build();
+            shareDialog.show(linkContent);
+        }
+    }
+    /**
+     * facebook配置
+     */
+    private void initFacebook() {
+        callbackManager = CallbackManager.Factory.create();
+        shareDialog = new ShareDialog(this);
+        // this part is optional
+        shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
 
+            @Override
+            public void onSuccess(Sharer.Result result) {
+                //分享成功的回调，在这里做一些自己的逻辑处理
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+    }
 
 }
 
