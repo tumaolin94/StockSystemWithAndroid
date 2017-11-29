@@ -157,9 +157,9 @@ public class CurrentView  extends Fragment {
                             values[5] = df.format((pre_close));
                             values[6] = df.format((low))+"-"+df.format((high));
                             values[7] = String.valueOf(volume);
-                            for(int ind=0;ind<values.length;ind++){
-                                Log.i("values",values[ind]);
-                            }
+//                            for(int ind=0;ind<values.length;ind++){
+//                                Log.i("values",values[ind]);
+//                            }
                             ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
                             for(int i=0;i<values.length;i++)
                             {
@@ -168,6 +168,7 @@ public class CurrentView  extends Fragment {
                                 map.put("itemValue", values[i]);
 //            map.put("itemValue", "Finished in 1 Min 54 Secs, 70 Moves! ");
                                 listItem.add(map);
+                                Log.i("values",values[i]);
                             }
                             //生成适配器的Item和动态数组对应的元素
                             SimpleAdapter listItemAdapter = new SimpleAdapter(context,listItem,//数据源
