@@ -181,6 +181,30 @@ function drawStock(){
                   useHTML:true,
                   text: "<a style=' text-decoration: none' href='https://www.alphavantage.co/'  target='_blank' >Source: Alpha Vantage</a>"
                   },
+                          rangeSelector: {
+
+                              buttons: [{
+                                  type: 'month',
+                                  count: 1,
+                                  text: '3m'
+                              }, {
+                                  type: 'month',
+                                  count: 3,
+                                  text: '3m'
+                              }, {
+                                  type: 'month',
+                                  count: 6,
+                                  text: '6m'
+                              }, {
+                                  type: 'year',
+                                  count: 1,
+                                  text: '1y'
+                              }, {
+                                  type: 'all',
+                                  text: 'All'
+                              }],
+                              selected: 4
+                          },
           series: [{
             name: symbol + ' Stock Value',
             type: 'area',

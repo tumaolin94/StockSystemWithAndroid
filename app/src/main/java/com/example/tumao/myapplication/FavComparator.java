@@ -38,6 +38,6 @@ public class FavComparator implements Comparator<FavObj> {
                 break;
             }
         }
-        return order.equals("Ascending")?res: -1*res;
+        return order.equals("Descending")?-1*res: res;
     }
 }

@@ -57,6 +57,7 @@ public class CurrentView  extends Fragment {
     private ShareDialog shareDialog;
     private CallbackManager callbackManager;
     public CurrentView(){}
+    boolean starEmpty = true;
     public static CurrentView newInstance(String symbol){
         CurrentView cv = new CurrentView();
         Bundle args = new Bundle();
@@ -64,22 +65,33 @@ public class CurrentView  extends Fragment {
         cv.setArguments(args);
         return cv;
     }
+    String getSymbol = "";
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         if(rootView!=null) return rootView;
+        final Context context = this.getContext();
 
         String str = getArguments().getString("symbol");
         final String symbol = str;
+        starEmpty = !ifSaved(context,symbol);
         rootView = inflater.inflate(R.layout.fragment_current, container, false);
         ListView listview = (ListView)rootView.findViewById(R.id.listView);
-        final Context context = this.getContext();
+
         tableRequest(symbol,listview,this.getContext());
         View footView = inflater.inflate(R.layout.afterlist, null);
         ImageView fb = (ImageView)rootView.findViewById(R.id.imageView);
-        ImageView star = (ImageView)rootView.findViewById(R.id.imageView2);
+        final ImageView star = (ImageView)rootView.findViewById(R.id.imageView2);
         final String testURL = "file:///android_asset/highchart.html";
         final WebView webView = (WebView)footView.findViewById(R.id.webView);
+
+        if(starEmpty){
+            star.setBackgroundDrawable(getResources().getDrawable(R.drawable.empty));
+        }else {
+            star.setBackgroundDrawable(getResources().getDrawable(R.drawable.filled));
+        }
+
+
         webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl(testURL);
         webView.post(new Runnable() {
@@ -137,10 +149,7 @@ public class CurrentView  extends Fragment {
             public void onClick(final View arg0) {
 //                String url = "";
                 Log.i("facebook","facebook");
-//                ShareLinkContent content = new ShareLinkContent.Builder()
-//                        .setContentUrl(Uri.parse("https://developers.facebook.com"))
-//                        .build();
-//                javascript:fetchFB('SMA')
+
 
                 webView.evaluateJavascript("javascript:fetchFB('"+spinner.getSelectedItem().toString()+"')", new ValueCallback<String>() {
                     @Override
@@ -161,38 +170,74 @@ public class CurrentView  extends Fragment {
             public void onClick(final View arg0) {
                 List<FavObj> list = new ArrayList<>();
                 Gson gson = new Gson();
-//                String url = "";
-                Log.i("star","star");
-//1、open Preferences
-                SharedPreferences settings = context.getSharedPreferences("setting", 0);
+                if(starEmpty){
+                    star.setBackgroundDrawable(getResources().getDrawable(R.drawable.filled));
+                    starEmpty = false;
+                    //1、open Preferences
+                    SharedPreferences settings = context.getSharedPreferences("setting", 0);
 //2、editor
-                SharedPreferences.Editor editor = settings.edit();
+                    SharedPreferences.Editor editor = settings.edit();
 //                editor.clear();
 //                editor.commit();
 //3、load old data
 
-                String oldList = settings.getString("save_data","");
-                Log.i("load data",oldList);
-                if(!oldList.equals("")){
-                    list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
-                }
+                    String oldList = settings.getString("save_data","");
+                    Log.i("load data",oldList);
+                    if(!oldList.equals("")){
+                        list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
+                    }
 
-                double change = Double.parseDouble(values[1]) - Double.parseDouble(values[5]);
-                double change_per = change /  Double.parseDouble(values[5]);
-                Log.i("favObj ",values[0]);
-                Log.i("favObj ",values[1]);
-                Log.i("favObj ",change+"");
-                Log.i("favObj ",change_per+"");
-                FavObj favObj = new FavObj(values[0],Double.parseDouble(values[1]),change, change_per, new Date().getTime());
-                Log.i("save data",favObj.toString());
-                list.add(favObj);
-                String newList = gson.toJson(list);
-                Log.i("newList ",newList);
+                    double change = Double.parseDouble(values[1]) - Double.parseDouble(values[5]);
+                    double change_per = change /  Double.parseDouble(values[5]);
+                    Log.i("favObj ",values[0]);
+                    Log.i("favObj ",values[1]);
+                    Log.i("favObj ",change+"");
+                    Log.i("favObj ",change_per+"");
+                    FavObj favObj = new FavObj(values[0],Double.parseDouble(values[1]),change, change_per, new Date().getTime());
+                    Log.i("save data",favObj.toString());
+                    list.add(favObj);
+                    String newList = gson.toJson(list);
+                    Log.i("newList ",newList);
 
 //                SharedPreferences.Editor editor = settings.edit();
 //4、完成提交
-              editor.putString("save_data",newList);
-                editor.commit();
+                    editor.putString("save_data",newList);
+                    editor.commit();
+                }else{
+                    starEmpty = true;
+
+                    star.setBackgroundDrawable(getResources().getDrawable(R.drawable.empty));
+                    //1、open Preferences
+                    SharedPreferences settings = context.getSharedPreferences("setting", 0);
+//2、editor
+                    SharedPreferences.Editor editor = settings.edit();
+//                editor.clear();
+//                editor.commit();
+//3、load old data
+
+                    String oldList = settings.getString("save_data","");
+                    Log.i("load data",oldList);
+                    if(!oldList.equals("")){
+                        list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
+                    }
+                    int i = 0;
+                    for(i = 0;i<list.size();i++){
+                        if(list.get(i).symbol.equals(symbol)) {
+                            Log.i("delete ",symbol);
+                            break;
+                        }
+                    }
+                    list.remove(i);
+                    String newList = gson.toJson(list);
+                    Log.i("newList ",newList);
+//4、完成提交
+                    editor.clear();
+                    editor.putString("save_data",newList);
+                    editor.commit();
+                }
+//                String url = "";
+                Log.i("star",String.valueOf(starEmpty));
+
 
 
             }
@@ -251,8 +296,8 @@ public class CurrentView  extends Fragment {
                             DecimalFormat df = new DecimalFormat("0.00");
                             values[0] = symbol;
                             values[1] = df.format((close));
-                            values[2] = df.format((close - pre_close))+"("+df.format((close - pre_close)/pre_close)+")";
-                            values[3] = timestamp;
+                            values[2] = df.format((close - pre_close))+"("+df.format((close - pre_close)/pre_close)+"%)";
+                            values[3] = timestamp+" EST";
                             values[4] = df.format((open));
                             values[5] = df.format((pre_close));
                             values[6] = df.format((low))+"-"+df.format((high));
@@ -300,6 +345,24 @@ public class CurrentView  extends Fragment {
         jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(10000,3,DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         RequestQueue requestQueue = Volley.newRequestQueue(this.getContext());
         requestQueue.add(jsObjRequest);
+    }
+    public boolean ifSaved(Context context,String symbol){
+        SharedPreferences settings = context.getSharedPreferences("setting", 0);
+        List<FavObj> list = new ArrayList<>();
+        Gson gson = new Gson();
+        String oldList = settings.getString("save_data","");
+        Log.i("load data",oldList);
+        if(!oldList.equals("")){
+            list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
+        }
+        int i = 0;
+        for(i = 0;i<list.size();i++){
+            if(list.get(i).symbol.equals(symbol)) {
+                Log.i("find ",symbol);
+                return true;
+            }
+        }
+        return false;
     }
     public void shareToFacebook(View view,String url) {
         Log.i("enterFB",url);
