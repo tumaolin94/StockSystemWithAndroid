@@ -2,6 +2,7 @@ package com.example.tumao.myapplication;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -15,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -53,6 +55,8 @@ public class CurrentView  extends Fragment {
     static String[] itemTitle ={"Stock Symbol","Last Price","Change","Timestamp","Open","Close",
             "Day's Range","Volume","Indicators"};
     static String[] indicators = {"Price","SMA","EMA","STOCH","RSI","ADX","CCI","BBANDS","MACD"};
+    boolean canChange = false;
+    String preChoose = "Price";
     View rootView;
     private ShareDialog shareDialog;
     private CallbackManager callbackManager;
@@ -78,20 +82,21 @@ public class CurrentView  extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_current, container, false);
         ListView listview = (ListView)rootView.findViewById(R.id.listView);
 
-        tableRequest(symbol,listview,this.getContext());
+
         View footView = inflater.inflate(R.layout.afterlist, null);
         ImageView fb = (ImageView)rootView.findViewById(R.id.imageView);
         final ImageView star = (ImageView)rootView.findViewById(R.id.imageView2);
         final String testURL = "file:///android_asset/highchart.html";
         final WebView webView = (WebView)footView.findViewById(R.id.webView);
-
+        final ProgressBar pb = (ProgressBar)rootView.findViewById(R.id.progressBar_current);
+        tableRequest(symbol,listview,this.getContext(),pb);
         if(starEmpty){
             star.setBackgroundDrawable(getResources().getDrawable(R.drawable.empty));
         }else {
             star.setBackgroundDrawable(getResources().getDrawable(R.drawable.filled));
         }
-
-
+        tableRequest(symbol,listview,this.getContext(),pb);
+        listview.setVisibility(View.GONE);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl(testURL);
         webView.post(new Runnable() {
@@ -113,12 +118,18 @@ public class CurrentView  extends Fragment {
 
         listview.addFooterView(footView);
         final Spinner spinner = footView.findViewById(R.id.spinner);
+        final TextView change = footView.findViewById(R.id.change);
         spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 // your code here
                 Util.showToast(context, spinner.getSelectedItem().toString());
-                webView.loadUrl("javascript:testVariable()");
+                if(!spinner.getSelectedItem().toString().equals(preChoose)) {
+                    canChange = !canChange;
+                    webView.loadUrl("javascript:testVariable()");
+                    change.setTextColor(Color.BLACK);
+                    preChoose = spinner.getSelectedItem().toString();
+                }
             }
 
             @Override
@@ -127,19 +138,23 @@ public class CurrentView  extends Fragment {
             }
 
         });
-        final TextView change = footView.findViewById(R.id.change);
+
+        change.setTextColor(Color.GRAY);
         change.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
                 Log.i("onClick","change");
-                webView.post(new Runnable() {
-                    @Override
-                    public void run() {
+                if(canChange) {
+                    webView.post(new Runnable() {
+                        @Override
+                        public void run() {
 
-                        webView.loadUrl("javascript:showChart('"+spinner.getSelectedItem().toString()+"')");
-                    }
-                });
-
+                            webView.loadUrl("javascript:showChart('" + spinner.getSelectedItem().toString() + "')");
+                        }
+                    });
+                    canChange = !canChange;
+                    change.setTextColor(Color.GRAY);
+                }
             }
         });
         initFacebook();
@@ -246,7 +261,7 @@ public class CurrentView  extends Fragment {
     }
     ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
     final String[] values = new String[8];
-    public void tableRequest(String symbol, final ListView listview, final Context context){
+    public void tableRequest(String symbol, final ListView listview, final Context context,final ProgressBar pb){
         if(symbol.contains("-")) return;
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+symbol;
 
@@ -326,6 +341,8 @@ public class CurrentView  extends Fragment {
 
                             //添加并且显示
                             listview.setAdapter(listItemAdapter);
+                            listview.setVisibility(View.VISIBLE);
+                            pb.setVisibility(View.GONE);
                         }catch (JSONException e){
                             Log.e("Return value",e.toString());
                         }

@@ -22,6 +22,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -72,6 +73,8 @@ public class MainActivity extends AppCompatActivity {
         actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
         final TextView getQuote = findViewById(R.id.textView2);
         final TextView clear = findViewById(R.id.textView3);
+        final ProgressBar pb = (ProgressBar)findViewById(R.id.progressBar) ;
+        pb.setVisibility(View.GONE);
         listview = findViewById(R.id.favlist);
         actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -105,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
                 if(s.length() != 0){
                     Log.i("AutoChange",actv.getText().toString());
 //                    if(!validation(actv)){
-                        jsonRequest(actv.getText().toString(), adapter);
+                        jsonRequest(actv.getText().toString(), adapter,pb);
                         adapter.notifyDataSetChanged();
 //                        actv.setAdapter(adapter);
 //                    Log.i("jsonRequest",actv.getAdapter().getCount()+"");
@@ -431,8 +434,9 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
-    public void jsonRequest(String symbol, final ArrayAdapter<String> adapter){
+    public void jsonRequest(String symbol, final ArrayAdapter<String> adapter,final ProgressBar pb){
         if(symbol.contains("-")) return;
+        pb.setVisibility(View.VISIBLE);
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/auto?input="+symbol;
         JsonArrayRequest jsObjRequest = new JsonArrayRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
@@ -442,6 +446,7 @@ public class MainActivity extends AppCompatActivity {
 //                    mTxtDisplay.setText("Response: " + response.toString());
                         Log.i("Autocomplete",response.toString());
                         try {
+
                             Log.i("Autocomplete",response.getJSONObject(0).get("Symbol").toString()+" "+response.length());
                             String[] altArray = new String[Math.min(5,response.length())];
                             int len = altArray.length;
@@ -456,6 +461,7 @@ public class MainActivity extends AppCompatActivity {
                             displayAuto(altArray);
                             Log.i("jsonRequest","beforeshowDropDown");
                             actv.showDropDown();
+                            pb.setVisibility(View.GONE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }

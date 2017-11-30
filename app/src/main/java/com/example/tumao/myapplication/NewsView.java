@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 
 import com.android.volley.DefaultRetryPolicy;
@@ -59,7 +60,10 @@ public class NewsView  extends Fragment {
         rootView = inflater.inflate(R.layout.fragment_news, container, false);
         final ListView newsView = (ListView)rootView.findViewById(R.id.newsView);
         final Context context = this.getContext();
-        newsRequest(symbol,newsView,context);
+        final ProgressBar pb = (ProgressBar)rootView.findViewById(R.id.progressBar_news);
+        pb.setVisibility(View.VISIBLE);
+        newsView.setVisibility(View.GONE);
+        newsRequest(symbol,newsView,context,pb);
         newsView.setOnItemClickListener(new OnItemClickListener()
         {
             @Override
@@ -78,7 +82,7 @@ public class NewsView  extends Fragment {
         return rootView;
     }
 
-    public void newsRequest(String symbol, final ListView listview, final Context context){
+    public void newsRequest(String symbol, final ListView listview, final Context context,final ProgressBar pb){
         if(symbol.contains("-")) return;
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/news?symbol="+symbol;
         Log.i("beforeRequest",url);
@@ -121,8 +125,8 @@ public class NewsView  extends Fragment {
                             {
                                 HashMap<String, Object> map = new HashMap<String, Object>();
                                 map.put("title", titleList.get(i));
-                                map.put("author", autohrList.get(i));
-                                map.put("date", dateList.get(i));
+                                map.put("author", "Author: "+autohrList.get(i));
+                                map.put("date", "Date: "+dateList.get(i));
                                 map.put("link", linkList.get(i));
                                 listItem.add(map);
                             }
@@ -137,6 +141,8 @@ public class NewsView  extends Fragment {
 
                             //添加并且显示
                             listview.setAdapter(listItemAdapter);
+                            listview.setVisibility(View.VISIBLE);
+                            pb.setVisibility(View.GONE);
                         }catch (JSONException e){
                             Log.e("Return value",e.toString());
                         }
