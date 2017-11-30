@@ -326,9 +326,8 @@ function drawAreaAndVolume(){
             type: 'area',
             threshold: null,
             lineWidth: 1,
-            lineColor: 'red',
+            lineColor: 'blue',
             data: data1,
-            color: '#ff0000',
             fillOpacity: 0.5,
             "marker":{
             "enabled":false
@@ -340,7 +339,7 @@ function drawAreaAndVolume(){
         }, {
             name: symbol+' Volume',
             type: 'column',
-            color: '#ffffff',
+            color: 'red',
             yAxis: 1,
             data: data2
         }],
@@ -383,9 +382,8 @@ function fetchFBPrice(){
             type: 'area',
             threshold: null,
             lineWidth: 1,
-            lineColor: 'red',
+            lineColor: 'blue',
             data: data1,
-            color: '#ff0000',
             fillOpacity: 0.5,
             "marker":{
             "enabled":false

@@ -14,6 +14,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -43,6 +44,8 @@ import java.util.TimeZone;
 
 public class NewsView  extends Fragment {
     View rootView;
+    boolean ifError = false;
+    int Errorcount =0;
     public NewsView(){}
     public static NewsView newInstance(String symbol){
         NewsView fragment = new NewsView();
@@ -61,9 +64,10 @@ public class NewsView  extends Fragment {
         final ListView newsView = (ListView)rootView.findViewById(R.id.newsView);
         final Context context = this.getContext();
         final ProgressBar pb = (ProgressBar)rootView.findViewById(R.id.progressBar_news);
+        final TextView tv = (TextView)rootView.findViewById(R.id.error_news);
         pb.setVisibility(View.VISIBLE);
         newsView.setVisibility(View.GONE);
-        newsRequest(symbol,newsView,context,pb);
+        newsRequest(symbol,newsView,context,pb,tv);
         newsView.setOnItemClickListener(new OnItemClickListener()
         {
             @Override
@@ -82,7 +86,7 @@ public class NewsView  extends Fragment {
         return rootView;
     }
 
-    public void newsRequest(String symbol, final ListView listview, final Context context,final ProgressBar pb){
+    public void newsRequest(String symbol, final ListView listview, final Context context,final ProgressBar pb,final TextView tv){
         if(symbol.contains("-")) return;
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/news?symbol="+symbol;
         Log.i("beforeRequest",url);
@@ -143,8 +147,10 @@ public class NewsView  extends Fragment {
                             listview.setAdapter(listItemAdapter);
                             listview.setVisibility(View.VISIBLE);
                             pb.setVisibility(View.GONE);
+                            ifError = false;
                         }catch (JSONException e){
                             Log.e("Return value",e.toString());
+
                         }
 
 
@@ -155,7 +161,14 @@ public class NewsView  extends Fragment {
                     public void onErrorResponse(VolleyError error) {
 
                         // TODO Auto-generated method stub
-                        Log.e("error",error.toString());
+                        Log.e("errorNewsView",error.toString());
+                        ifError = true;
+                        Errorcount++;
+                        Log.e("errorNewsView",Errorcount+"");
+                        if(Errorcount == 3){
+                            pb.setVisibility(View.GONE);
+                            tv.setVisibility(View.VISIBLE);
+                        }
                     }
                 });
 //        Log.i("innerend",values[0]);

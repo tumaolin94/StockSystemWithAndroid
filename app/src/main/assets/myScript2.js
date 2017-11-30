@@ -12,43 +12,82 @@ function formReset(){
     document.getElementById('container').style.visibility='hidden';
 }
 
+//function submitSymbol(symbol){
+////    var symbol = "aapl";
+//    if(symbol==""){
+//        alert("Please enter a symbol");
+//        return;
+//    }
+//    console.log(symbol);
+//
+////    document.getElementById('symbol').value=symbol;
+//    var url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+symbol;
+//    console.log(url);
+//
+//    var xmlhttp;
+//    if(window.XMLHttpRequest) {
+//                    xmlhttp = new XMLHttpRequest();
+//                } else {
+//                    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+//                }
+//      xmlhttp.onreadystatechange = function() {
+//                    if (this.readyState == 4 && this.status == 200) {
+//                        try{
+//                            jsonObj = JSON.parse(xmlhttp.responseText);
+//                             // alert(jsonObj);
+//                            generateHighStock(jsonObj);
+//                            console.log(jsonObj);
+//                        }catch(e){
+//                            console.log("JSON File Syntax Error");
+//                            console.log(jsonObj);
+//                            console.log(e);
+//                            return null;
+//                        }
+//                    }
+//                };
+//      xmlhttp.open("GET", url, false);
+//      xmlhttp.send();
+//}
 function submitSymbol(symbol){
-//    var symbol = "aapl";
     if(symbol==""){
         alert("Please enter a symbol");
         return;
     }
     console.log(symbol);
-
-//    document.getElementById('symbol').value=symbol;
+//
+////    document.getElementById('symbol').value=symbol;
+    var res = false;
     var url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+symbol;
-    console.log(url);
-
-    var xmlhttp;
-    if(window.XMLHttpRequest) {
-                    xmlhttp = new XMLHttpRequest();
-                } else {
-                    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-                }
-      xmlhttp.onreadystatechange = function() {
-                    if (this.readyState == 4 && this.status == 200) {
-                        try{
-                            jsonObj = JSON.parse(xmlhttp.responseText);
-                             // alert(jsonObj);
-                            generateHighStock(jsonObj);
-                            console.log(jsonObj);
-                        }catch(e){
-                            console.log("JSON File Syntax Error");
-                            console.log(jsonObj);
-                            console.log(e);
-                            return null;
-                        }
-                    }
-                };
-      xmlhttp.open("GET", url, true);
-      xmlhttp.send();
+    $.ajax({
+        tryCount : 0,
+        retryLimit : 3,
+        url: url,
+        success: function(response){
+                                    jsonObj = JSON.parse(response);
+                                    console.log("return "+jsonObj);
+                                     // alert(jsonObj);
+                                    generateHighStock(jsonObj);
+                                    console.log(jsonObj);
+//            jsonObjIndicator[index] = response;
+            console.log("Hisreturn "+jsonObj);
+            res = true;
+//            console.log(jsonObjIndicator[index]);
+        },
+          error: function(jqXHR, status, err){
+          // 响应失败的回调函数
+          console.log("error "+err);
+           this.tryCount++;
+           if (this.tryCount <= this.retryLimit) {
+               //try again
+               $.ajax(this);
+               return;
+           }
+           return false;
+          },
+        async: false
+    });
+    return res;
 }
-
         var symbol ;
         var ReDate ;
         var open ;

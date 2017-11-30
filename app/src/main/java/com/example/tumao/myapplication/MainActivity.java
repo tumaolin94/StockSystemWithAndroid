@@ -20,13 +20,16 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -48,6 +51,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class MainActivity extends AppCompatActivity {
 //    SimpleAdapter listItemAdapter;
     List<FavObj> sortList = new ArrayList<>();
@@ -59,6 +65,13 @@ public class MainActivity extends AppCompatActivity {
     int deletePosition = 0;
     int selectedsortPositon = 0;
     int selectedorderPositon = 0;
+    private Timer timer;
+    private TimerTask task = new TimerTask() {
+        @Override
+        public void run() {
+            refresh(sortList);
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView getQuote = findViewById(R.id.textView2);
         final TextView clear = findViewById(R.id.textView3);
         final ProgressBar pb = (ProgressBar)findViewById(R.id.progressBar) ;
+        final Switch sw = (Switch)findViewById(R.id.switch1);
         pb.setVisibility(View.GONE);
         listview = findViewById(R.id.favlist);
         actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -107,13 +121,13 @@ public class MainActivity extends AppCompatActivity {
                                       int before, int count) {
                 if(s.length() != 0){
                     Log.i("AutoChange",actv.getText().toString());
-//                    if(!validation(actv)){
+                    if(!validation(actv)){
                         jsonRequest(actv.getText().toString(), adapter,pb);
                         adapter.notifyDataSetChanged();
 //                        actv.setAdapter(adapter);
 //                    Log.i("jsonRequest",actv.getAdapter().getCount()+"");
 //                        actv.showDropDown();
-//                    }
+                    }
 
                 }
 
@@ -144,10 +158,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
                 Log.i("onClick","clear");
-
-                    Intent i = new Intent(MainActivity.this, StockActivity.class);
-                    i.putExtra("data", "AAPL");
-                    startActivity(i);
+                actv.setText("");
 
             }
         });
@@ -362,6 +373,29 @@ public class MainActivity extends AppCompatActivity {
                 contextMenu.add(0,1,0,"Yes");
             }
         });
+
+        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked) {
+                    //选中时 do some thing
+                    Log.i("switch","startAutoRefresh");
+                    timer = new Timer();
+                    // 参数：
+                    // 1000，延时1秒后执行。
+                    // 2000，每隔2秒执行1次task。
+                    timer.schedule(task, 1000, 5000);
+                } else {
+                    //非选中时 do some thing
+                    Log.i("switch","stopAutoRefresh");
+                    timer.cancel();
+                    task.cancel();
+                }
+
+            }
+        });
         }
     public boolean onContextItemSelected(MenuItem item) {
 
@@ -421,6 +455,7 @@ public class MainActivity extends AppCompatActivity {
             list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
         }
         FavListAdapter fAdapter = new FavListAdapter(list);
+        sortList = list;
         //添加并且显示
         listview.setAdapter(fAdapter);
     }
@@ -571,6 +606,7 @@ public class MainActivity extends AppCompatActivity {
                 });
 //        Log.i("innerend",values[0]);
         RequestQueue requestQueue = Volley.newRequestQueue(context);
+        jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(10000,3,DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(jsObjRequest);
     }
 
@@ -582,7 +618,10 @@ public class MainActivity extends AppCompatActivity {
         Log.i("RefreshfavObj ",change+"");
         Log.i("RefreshfavObj ",change_per+"");
         FavObj favobj = sortList.get(i);
-        favobj = new FavObj(values[0],Double.parseDouble(values[1]),change, change_per, new Date().getTime());
+        sortList.get(i).symbol=values[0];
+        sortList.get(i).price=Double.parseDouble(values[1]);
+        sortList.get(i).change=change;
+        sortList.get(i).change_per=change_per;
         refreshCount++;
 
         if(refreshCount == sortList.size()){

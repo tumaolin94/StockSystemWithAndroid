@@ -7,8 +7,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 /**
  * Created by tumao on 2017/11/26.
@@ -35,14 +38,34 @@ public class HistoricalView  extends Fragment {
         final String testURL = "file:///android_asset/highstock.html";
         final WebView webView = (WebView)rootView.findViewById(R.id.hisView);
         webView.getSettings().setJavaScriptEnabled(true);
+        final ProgressBar pb = (ProgressBar)rootView.findViewById(R.id.progressBar_his);
+        final TextView tv = (TextView)rootView.findViewById(R.id.error_his);
+        pb.setVisibility(View.VISIBLE);
+//        pb.setVisibility(View.GONE);
+//        tv.setVisibility(View.VISIBLE);
+        webView.setVisibility(View.GONE);
         webView.loadUrl(testURL);
         Log.i("Historical",testURL);
         webView.setWebViewClient(new WebViewClient(){
             public void onPageFinished(WebView view, String url){
                 Log.i("Historical",testURL);
-                webView.loadUrl("javascript:submitSymbol('"+symbol+"')");
+//                webView.loadUrl("javascript:submitSymbol('"+symbol+"')");
+                webView.evaluateJavascript("javascript:submitSymbol('"+symbol+"')", new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String value) {
+                        //此处为 js 返回的结果
+                        Log.i("HisreturnJS",value);
+                        if(value.equals("true")){
+                            webView.setVisibility(View.VISIBLE);
+                        }else {
+                            tv.setVisibility(View.VISIBLE);
+                        }
+                        pb.setVisibility(View.GONE);
+                    }
+                });
             }
         });
+
 
         return rootView;
     }

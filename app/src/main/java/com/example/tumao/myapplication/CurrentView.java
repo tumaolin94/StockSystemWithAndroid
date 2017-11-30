@@ -62,6 +62,8 @@ public class CurrentView  extends Fragment {
     private CallbackManager callbackManager;
     public CurrentView(){}
     boolean starEmpty = true;
+    boolean ifError = false;
+    int Errorcount = 0;
     public static CurrentView newInstance(String symbol){
         CurrentView cv = new CurrentView();
         Bundle args = new Bundle();
@@ -89,13 +91,14 @@ public class CurrentView  extends Fragment {
         final String testURL = "file:///android_asset/highchart.html";
         final WebView webView = (WebView)footView.findViewById(R.id.webView);
         final ProgressBar pb = (ProgressBar)rootView.findViewById(R.id.progressBar_current);
-        tableRequest(symbol,listview,this.getContext(),pb);
+        final TextView tv = (TextView)rootView.findViewById(R.id.error_cur);
+//        tableRequest(symbol,listview,this.getContext(),pb,tv);
         if(starEmpty){
             star.setBackgroundDrawable(getResources().getDrawable(R.drawable.empty));
         }else {
             star.setBackgroundDrawable(getResources().getDrawable(R.drawable.filled));
         }
-        tableRequest(symbol,listview,this.getContext(),pb);
+        tableRequest(symbol,listview,this.getContext(),pb,tv);
         listview.setVisibility(View.GONE);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.loadUrl(testURL);
@@ -261,7 +264,7 @@ public class CurrentView  extends Fragment {
     }
     ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
     final String[] values = new String[8];
-    public void tableRequest(String symbol, final ListView listview, final Context context,final ProgressBar pb){
+    public void tableRequest(String symbol, final ListView listview, final Context context,final ProgressBar pb,final TextView tv){
         if(symbol.contains("-")) return;
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+symbol;
 
@@ -338,13 +341,15 @@ public class CurrentView  extends Fragment {
                                     //ImageItem的XML文件里面的一个ImageView,两个TextView ID
                                     new int[] {R.id.itemTitle,R.id.itemValue}
                             );
-
+                            TableAdapter ta = new TableAdapter(values,itemTitle);
                             //添加并且显示
-                            listview.setAdapter(listItemAdapter);
+//                            listview.setAdapter(listItemAdapter);
+                            listview.setAdapter(ta);
                             listview.setVisibility(View.VISIBLE);
                             pb.setVisibility(View.GONE);
                         }catch (JSONException e){
                             Log.e("Return value",e.toString());
+
                         }
 
 
@@ -355,7 +360,14 @@ public class CurrentView  extends Fragment {
                     public void onErrorResponse(VolleyError error) {
 
                         // TODO Auto-generated method stub
-                        Log.e("error",error.toString());
+                        Log.e("errorCurrentView",error.toString());
+                        ifError = true;
+                        Errorcount++;
+                        Log.e("errorCurrentView",Errorcount+"");
+                        if(Errorcount == 3){
+                            pb.setVisibility(View.GONE);
+                            tv.setVisibility(View.VISIBLE);
+                        }
                     }
                 });
 //        Log.i("innerend",values[0]);
