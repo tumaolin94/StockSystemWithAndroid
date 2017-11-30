@@ -2,6 +2,7 @@ package com.example.tumao.myapplication;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -9,8 +10,12 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -19,37 +24,25 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MainActivity extends AppCompatActivity {
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
+public class MainActivity extends AppCompatActivity {
+    SimpleAdapter listItemAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //TODO:
-//        FacebookSdk.sdkInitialize(getApplicationContext());
-//        String keyHash = FacebookSdk.getApplicationSignature(getApplicationContext());
-//        Log.i("keyHash",keyHash);
-//        try {
-//            PackageInfo info = getPackageManager().getPackageInfo(
-//                    "com.example.tumao.myapplication",
-//                    PackageManager.GET_SIGNATURES);
-//
-//            for (Signature signature : info.signatures) {
-//                MessageDigest md = MessageDigest.getInstance("SHA");
-//                md.update(signature.toByteArray());
-//                Log.d("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
-//            }
-//        } catch (PackageManager.NameNotFoundException e) {
-//
-//        } catch (NoSuchAlgorithmException e) {
-//
-//        }
-//        //Creating the instance of ArrayAdapter containing list of fruit names
         final ArrayAdapter<String> adapter = new SingleArrayAdapter
                 (this, android.R.layout.select_dialog_item, new String[0]);
         //Getting the instance of AutoCompleteTextView
@@ -58,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
         final TextView getQuote = findViewById(R.id.textView2);
         final TextView clear = findViewById(R.id.textView3);
+        final ListView listview = findViewById(R.id.favlist);
         actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -107,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
                    Util.showToast(mContext, "Please enter a stock name or symbol");
                }else{
                    Intent i = new Intent(MainActivity.this, StockActivity.class);
+                   i.putExtra("data",actv.getText().toString());
                    startActivity(i);
                }
 
@@ -124,8 +119,122 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-    }
+        List<FavObj> list = new ArrayList<>();
+        Gson gson = new Gson();
+        SharedPreferences settings = getApplicationContext().getSharedPreferences("setting", 0);
 
+        String oldList = settings.getString("save_data","");
+        Log.i("Mainloaddata",oldList);
+        if(!oldList.equals("")){
+            list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
+        }
+
+        DecimalFormat df = new DecimalFormat("0.00");
+        ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
+        for(int i=0;i<list.size();i++)
+        {
+            HashMap<String, Object> map = new HashMap<String, Object>();
+            map.put("symbol", list.get(i).symbol);
+            map.put("price", list.get(i).price);
+            map.put("change", df.format(list.get(i).change));
+            listItem.add(map);
+            Log.i("change",list.get(i).symbol);
+        }
+        //生成适配器的Item和动态数组对应的元素
+        listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
+                R.layout.favorite,//ListItem的XML实现
+                //动态数组与ImageItem对应的子项
+                new String[] {"symbol", "price","change"},
+                //ImageItem的XML文件里面的一个ImageView,两个TextView ID
+                new int[] {R.id.symbol,R.id.price,R.id.change}
+        );
+
+        //添加并且显示
+        listview.setAdapter(listItemAdapter);
+        final List<FavObj> sortList = list;
+        final Spinner sortby = findViewById(R.id.spinner2);
+        final Spinner order = findViewById(R.id.spinner3);
+
+        sortby.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                // your code here
+//                Util.showToast(getApplicationContext(), spinner.getSelectedItem().toString());
+                Log.i("Sort by",sortby.getSelectedItem().toString());
+                Collections.sort(sortList,new FavComparator(sortby.getSelectedItem().toString(),order.getSelectedItem().toString()));
+                ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
+                DecimalFormat df = new DecimalFormat("0.00");
+                for(int i=0;i<sortList.size();i++)
+                {
+                    HashMap<String, Object> map = new HashMap<String, Object>();
+                    map.put("symbol", sortList.get(i).symbol);
+                    map.put("price", sortList.get(i).price);
+                    map.put("change", df.format(sortList.get(i).change));
+                    listItem.add(map);
+                    Log.i("change",sortList.get(i).symbol);
+                }
+                //生成适配器的Item和动态数组对应的元素
+                listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
+                        R.layout.favorite,//ListItem的XML实现
+                        //动态数组与ImageItem对应的子项
+                        new String[] {"symbol", "price","change"},
+                        //ImageItem的XML文件里面的一个ImageView,两个TextView ID
+                        new int[] {R.id.symbol,R.id.price,R.id.change}
+                );
+
+                //添加并且显示
+                listview.setAdapter(listItemAdapter);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // your code here
+            }
+
+        });
+        order.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                // your code here
+//                Util.showToast(getApplicationContext(), spinner.getSelectedItem().toString());
+                Log.i("Sort by",order.getSelectedItem().toString());
+                Collections.sort(sortList,new FavComparator(sortby.getSelectedItem().toString(),order.getSelectedItem().toString()));
+                ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
+                DecimalFormat df = new DecimalFormat("0.00");
+                for(int i=0;i<sortList.size();i++)
+                {
+                    HashMap<String, Object> map = new HashMap<String, Object>();
+                    map.put("symbol", sortList.get(i).symbol);
+                    map.put("price", sortList.get(i).price);
+                    map.put("change", df.format(sortList.get(i).change));
+                    listItem.add(map);
+                    Log.i("change",sortList.get(i).symbol);
+                }
+                //生成适配器的Item和动态数组对应的元素
+                listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
+                        R.layout.favorite,//ListItem的XML实现
+                        //动态数组与ImageItem对应的子项
+                        new String[] {"symbol", "price","change"},
+                        //ImageItem的XML文件里面的一个ImageView,两个TextView ID
+                        new int[] {R.id.symbol,R.id.price,R.id.change}
+                );
+
+                //添加并且显示
+                listview.setAdapter(listItemAdapter);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // your code here
+            }
+
+        });
+    }
+    @Override
+    public void onResume() {
+        super.onResume();  // Always call the superclass method first
+        listItemAdapter.notifyDataSetChanged();
+    }
     public boolean validation(AutoCompleteTextView actv){
 //        int length = actv.getText().replace(/\s/g, '').length();
         String text= actv.getText().toString();

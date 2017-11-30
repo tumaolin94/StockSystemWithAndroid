@@ -1,6 +1,7 @@
 package com.example.tumao.myapplication;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -31,14 +32,18 @@ import com.facebook.FacebookException;
 import com.facebook.share.Sharer;
 import com.facebook.share.model.ShareLinkContent;
 import com.facebook.share.widget.ShareDialog;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by tumao on 2017/11/26.
@@ -72,6 +77,7 @@ public class CurrentView  extends Fragment {
         tableRequest(symbol,listview,this.getContext());
         View footView = inflater.inflate(R.layout.afterlist, null);
         ImageView fb = (ImageView)rootView.findViewById(R.id.imageView);
+        ImageView star = (ImageView)rootView.findViewById(R.id.imageView2);
         final String testURL = "file:///android_asset/highchart.html";
         final WebView webView = (WebView)footView.findViewById(R.id.webView);
         webView.getSettings().setJavaScriptEnabled(true);
@@ -149,12 +155,56 @@ public class CurrentView  extends Fragment {
 //                shareToFacebook(arg0,url);
             }
         });
+        star.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(final View arg0) {
+                List<FavObj> list = new ArrayList<>();
+                Gson gson = new Gson();
+//                String url = "";
+                Log.i("star","star");
+//1、open Preferences
+                SharedPreferences settings = context.getSharedPreferences("setting", 0);
+//2、editor
+                SharedPreferences.Editor editor = settings.edit();
+//                editor.clear();
+//                editor.commit();
+//3、load old data
+
+                String oldList = settings.getString("save_data","");
+                Log.i("load data",oldList);
+                if(!oldList.equals("")){
+                    list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
+                }
+
+                double change = Double.parseDouble(values[1]) - Double.parseDouble(values[5]);
+                double change_per = change /  Double.parseDouble(values[5]);
+                Log.i("favObj ",values[0]);
+                Log.i("favObj ",values[1]);
+                Log.i("favObj ",change+"");
+                Log.i("favObj ",change_per+"");
+                FavObj favObj = new FavObj(values[0],Double.parseDouble(values[1]),change, change_per, new Date().getTime());
+                Log.i("save data",favObj.toString());
+                list.add(favObj);
+                String newList = gson.toJson(list);
+                Log.i("newList ",newList);
+
+//                SharedPreferences.Editor editor = settings.edit();
+//4、完成提交
+              editor.putString("save_data",newList);
+                editor.commit();
+
+
+            }
+        });
         return rootView;
     }
+    ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
+    final String[] values = new String[8];
     public void tableRequest(String symbol, final ListView listview, final Context context){
         if(symbol.contains("-")) return;
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+symbol;
-        final String[] values = new String[8];
+
         Log.i("beforeRequest",url);
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
@@ -210,7 +260,7 @@ public class CurrentView  extends Fragment {
 //                            for(int ind=0;ind<values.length;ind++){
 //                                Log.i("values",values[ind]);
 //                            }
-                            ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
+                            listItem = new ArrayList<HashMap<String, Object>>();
                             for(int i=0;i<values.length;i++)
                             {
                                 HashMap<String, Object> map = new HashMap<String, Object>();
