@@ -215,6 +215,11 @@ function drawStock(){
           chart: {
             zoomType: 'x'
           },
+          yAxis: {
+                      title: {
+                          text: 'Stock Value'
+                      }
+          },
           title: {text: symbol + ' Stock Value'},
           subtitle: {
                   useHTML:true,

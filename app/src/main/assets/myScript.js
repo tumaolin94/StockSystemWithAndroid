@@ -48,25 +48,46 @@ function formReset(){
 //      xmlhttp.open("GET", url, true);
 //      xmlhttp.send();
 //}
+function showErrMsg(){
+            //append child
+            console.log("showErrMsg");
+            var container = document.getElementById("container");
+            container.style.marginTop = "150px";
+            container.style.marginLeft = "50px";
+            container.innerHTML = "";
+            var node = document.createElement("span");
+            node.style.fontSize = "24px";
+            var textNode = document.createTextNode("Failed to load data.");
+            node.appendChild(textNode);
+            document.getElementById("container").appendChild(node);
+        }
+function deleteErrMsg(){
+            console.log("delete");
+            var container = document.getElementById("container");
+                        container.style.marginTop = "0px";
+                        container.style.marginLeft = "0px";
+                        container.innerHTML = "";
+}
 function submitSymbol(symbol){
     if(symbol==""){
         alert("Please enter a symbol");
         return;
     }
+    var res = false;
     console.log(symbol);
 //
 ////    document.getElementById('symbol').value=symbol;
     var url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+symbol;
-    $.ajax({
-        tryCount : 0,
-        retryLimit : 3,
-        url: url,
-        success: function(response){
-                                    jsonObj = JSON.parse(response);
-                                    console.log("return "+jsonObj);
-                                     // alert(jsonObj);
-                                    generateTable(jsonObj);
-                                    console.log(jsonObj);
+                                                 $.ajax({
+                                                     tryCount : 0,
+                                                     retryLimit : 3,
+                                                     url: url,
+                                                     success: function(response){
+                                                                                 jsonObj = JSON.parse(response);
+                                                                                 console.log("return "+jsonObj);
+                                                                                  // alert(jsonObj);
+                                                                                 generateTable(jsonObj);
+                                                                                 console.log(jsonObj);
 //            jsonObjIndicator[index] = response;
             console.log("return "+jsonObj);
 //            console.log(jsonObjIndicator[index]);
@@ -286,10 +307,16 @@ function showChart(indicator){
 
 }
 function drawAreaAndVolume(){
+    deleteErrMsg();
     document.getElementById('container').style.visibility='visible';
+    console.log("drawAreaAndVolume");
     console.log(date);
     console.log(data1);
     console.log(data2);
+    if(data1 == null||data1.length==0){
+        showErrMsg();
+        return;
+    }
     var chartTitle = symbol+" Stock Price and Volume";
     var myChart = Highcharts.chart('container', {
         chart: {
@@ -534,8 +561,12 @@ function generateFBChart(index, indicator, number){
         if(index == 0) return fetchFBPrice();
         if(number == 2) return generateFBTwoChart(index, indicator, number);
         if(number == 3) return generateFBThreeChart(index, indicator, number);
+        deleteErrMsg();
         var jsonObj = JSON.parse(jsonObjIndicator[index]);
-        if(!jsonObj.hasOwnProperty('Meta Data')) return;
+        if(!jsonObj.hasOwnProperty('Meta Data')) {
+            showErrMsg();
+            return;
+        }
 //        console.log(jsonObj);
         var meta = jsonObj['Meta Data'];
 //        console.log(meta);
@@ -617,7 +648,10 @@ function generateFBChart(index, indicator, number){
 function generateFBThreeChart(index, indicator, number){
         if(index == 0) return fetchFBPrice();
         var jsonObj = JSON.parse(jsonObjIndicator[index]);
-        if(!jsonObj.hasOwnProperty('Meta Data')) return;
+        if(!jsonObj.hasOwnProperty('Meta Data')){
+                                                            showErrMsg();
+                                                            return;
+                                                        }
 //        console.log(jsonObj);
         var meta = jsonObj['Meta Data'];
 //        console.log(meta);
@@ -716,7 +750,10 @@ function generateFBThreeChart(index, indicator, number){
 function generateFBTwoChart(index, indicator, number){
         if(index == 0) return fetchFBPrice();
         var jsonObj = JSON.parse(jsonObjIndicator[index]);
-        if(!jsonObj.hasOwnProperty('Meta Data')) return;
+        if(!jsonObj.hasOwnProperty('Meta Data')) {
+                                                             showErrMsg();
+                                                             return;
+                                                         }
 //        console.log(jsonObj);
         var meta = jsonObj['Meta Data'];
 //        console.log(meta);

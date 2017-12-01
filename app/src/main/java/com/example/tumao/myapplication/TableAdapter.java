@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.text.DecimalFormat;
@@ -58,7 +57,7 @@ public class TableAdapter extends BaseAdapter{
         final TableObj tableObj = list.get(i);
         TextView itemTitle = view.findViewById(R.id.itemTitle);
         TextView itemValue = view.findViewById(R.id.itemValue);
-        ImageView arrow = view.findViewById(R.id.arrow);
+//        ImageView arrow = view.findViewById(R.id.arrow);
         itemTitle.setText(tableObj.itemTitle);
         itemValue.setText(tableObj.itemValue);
         if(i==2){
@@ -66,10 +65,8 @@ public class TableAdapter extends BaseAdapter{
             if(tableObj.itemValue.contains("-")){
                 Drawable drawable=view.getResources().getDrawable(R.drawable.down);
                 drawable.setBounds(0, 0, 70, 80);
-                arrow.setBackgroundDrawable(arrow.getResources().getDrawable(R.drawable.down));
                 itemValue.setCompoundDrawables(null,null,drawable,null);
             }else{
-                arrow.setBackgroundDrawable(arrow.getResources().getDrawable(R.drawable.up));
                 Drawable drawable=view.getResources().getDrawable(R.drawable.up);
                 drawable.setBounds(0, 0, 70, 80);
                 itemValue.setCompoundDrawables(null,null,drawable,null);

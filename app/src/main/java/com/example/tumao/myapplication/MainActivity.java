@@ -47,8 +47,6 @@ import org.json.JSONObject;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
@@ -65,11 +63,13 @@ public class MainActivity extends AppCompatActivity {
     int deletePosition = 0;
     int selectedsortPositon = 0;
     int selectedorderPositon = 0;
+    boolean validName = false;
     private Timer timer;
+    ProgressBar pb;
     private TimerTask task = new TimerTask() {
         @Override
         public void run() {
-            refresh(sortList);
+            refresh(sortList,pb);
         }
     };
     @Override
@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
         final TextView getQuote = findViewById(R.id.textView2);
         final TextView clear = findViewById(R.id.textView3);
-        final ProgressBar pb = (ProgressBar)findViewById(R.id.progressBar) ;
+        pb = (ProgressBar)findViewById(R.id.progressBar) ;
         final Switch sw = (Switch)findViewById(R.id.switch1);
         pb.setVisibility(View.GONE);
         listview = findViewById(R.id.favlist);
@@ -142,7 +142,9 @@ public class MainActivity extends AppCompatActivity {
                 Context mContext = getApplicationContext();
                if(validation(actv)){
                    Util.showToast(mContext, "Please enter a stock name or symbol");
-               }else{
+               }else if(!validStock()) {
+                    Util.showToast(mContext, "The stock does not exist");
+                }else {
                    Intent i = new Intent(MainActivity.this, StockActivity.class);
                    String temp = actv.getText().toString();
 
@@ -333,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
                 Log.i("onClick","clear");
-                refresh(sortList);
+                refresh(sortList,pb);
 
             }
         });
@@ -351,6 +353,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
         listview.setOnItemLongClickListener(new OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view,
@@ -380,6 +383,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
                 if(isChecked) {
+                    pb.setVisibility(View.VISIBLE);
                     //选中时 do some thing
                     Log.i("switch","startAutoRefresh");
                     timer = new Timer();
@@ -396,7 +400,24 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        }
+        refresh(sortList,pb);
+    }
+    public void saveLocal(){
+        Gson gson = new Gson();
+//                String url = "";
+        Log.i("star","star");
+//1、open Preferences
+        SharedPreferences settings = context.getSharedPreferences("setting", 0);
+//2、editor
+        SharedPreferences.Editor editor = settings.edit();
+        editor.clear();
+        editor.commit();
+        String newList = gson.toJson(sortList);
+        Log.i("newsortList ",newList);
+
+        editor.putString("save_data",newList);
+        editor.commit();
+    }
     public boolean onContextItemSelected(MenuItem item) {
 
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
@@ -426,8 +447,6 @@ public class MainActivity extends AppCompatActivity {
                 String newList = gson.toJson(sortList);
                 Log.i("newsortList ",newList);
 
-//                SharedPreferences.Editor editor = settings.edit();
-//4、完成提交
                 editor.putString("save_data",newList);
                 editor.commit();
                 FavListAdapter fAdapter = new FavListAdapter(sortList);
@@ -458,6 +477,7 @@ public class MainActivity extends AppCompatActivity {
         sortList = list;
         //添加并且显示
         listview.setAdapter(fAdapter);
+        refresh(sortList,pb);
     }
     public boolean validation(AutoCompleteTextView actv){
 //        int length = actv.getText().replace(/\s/g, '').length();
@@ -470,7 +490,9 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
     public void jsonRequest(String symbol, final ArrayAdapter<String> adapter,final ProgressBar pb){
-        if(symbol.contains("-")) return;
+        if(symbol.contains("-")) {
+            return;
+        }
         pb.setVisibility(View.VISIBLE);
         String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/auto?input="+symbol;
         JsonArrayRequest jsObjRequest = new JsonArrayRequest
@@ -481,21 +503,26 @@ public class MainActivity extends AppCompatActivity {
 //                    mTxtDisplay.setText("Response: " + response.toString());
                         Log.i("Autocomplete",response.toString());
                         try {
+                            if(response.length()!=0){
+                                Log.i("Autocomplete",response.getJSONObject(0).get("Symbol").toString()+" "+response.length());
+                                String[] altArray = new String[Math.min(5,response.length())];
+                                int len = altArray.length;
 
-                            Log.i("Autocomplete",response.getJSONObject(0).get("Symbol").toString()+" "+response.length());
-                            String[] altArray = new String[Math.min(5,response.length())];
-                            int len = altArray.length;
-
-                            for(int i = 0 ;i<len;i++){
-                                JSONObject temp = response.getJSONObject(i);
-                                altArray [i] = temp.getString("Symbol")+"-"+temp.getString("Name")+"("+temp.getString("Exchange")+")";
-                                Log.i("Inner",altArray[i]);
-                            }
+                                for(int i = 0 ;i<len;i++){
+                                    JSONObject temp = response.getJSONObject(i);
+                                    altArray [i] = temp.getString("Symbol")+"-"+temp.getString("Name")+"("+temp.getString("Exchange")+")";
+                                    Log.i("Inner",altArray[i]);
+                                }
 //                            adapter.clear();
 //                            adapter.addAll(altArray);
-                            displayAuto(altArray);
-                            Log.i("jsonRequest","beforeshowDropDown");
-                            actv.showDropDown();
+                                displayAuto(altArray);
+                                Log.i("jsonRequest","beforeshowDropDown");
+                                actv.showDropDown();
+                                validName = true;
+                            }else{
+                                validName = false;
+                            }
+
                             pb.setVisibility(View.GONE);
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -526,13 +553,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void refresh(List<FavObj> sortList){
+    public void refresh(List<FavObj> sortList,final ProgressBar pb){
+//        pb.setVisibility(View.VISIBLE);
         for(int i=0;i<sortList.size();i++){
             String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+sortList.get(i).symbol;
-            refreshRequest(i,url,getApplicationContext());
+            refreshRequest(i,url,getApplicationContext(),pb);
         }
     }
-    public void refreshRequest(final int i, String url, Context context){
+    public void refreshRequest(final int i, String url, Context context,final ProgressBar pb){
         if(sortList.get(i).symbol.contains("-")) return;
 
         Log.i("beforerefreshRequest",url);
@@ -587,7 +615,7 @@ public class MainActivity extends AppCompatActivity {
                             values[5] = df.format((pre_close));
                             values[6] = df.format((low))+"-"+df.format((high));
                             values[7] = String.valueOf(volume);
-                            dealRefresh(values,i);
+                            dealRefresh(values,i,pb);
 
                         }catch (JSONException e){
                             Log.e("Return value",e.toString());
@@ -609,48 +637,54 @@ public class MainActivity extends AppCompatActivity {
         jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(10000,3,DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(jsObjRequest);
     }
-
-    public void dealRefresh(String[] values,int i){
+    public boolean validStock(){
+        return validName;
+    }
+    public void dealRefresh(String[] values,int i, final ProgressBar pb){
         double change = Double.parseDouble(values[1]) - Double.parseDouble(values[5]);
         double change_per = change /  Double.parseDouble(values[5]);
         Log.i("RefreshfavObj ",values[0]);
         Log.i("RefreshfavObj ",values[1]);
         Log.i("RefreshfavObj ",change+"");
         Log.i("RefreshfavObj ",change_per+"");
+        if(i>=sortList.size()) return;
         FavObj favobj = sortList.get(i);
         sortList.get(i).symbol=values[0];
         sortList.get(i).price=Double.parseDouble(values[1]);
         sortList.get(i).change=change;
         sortList.get(i).change_per=change_per;
         refreshCount++;
-
+        FavListAdapter fAdapter = new FavListAdapter(sortList);
+        //添加并且显示
+        listview.setAdapter(fAdapter);
+        saveLocal();
+        pb.setVisibility(View.GONE);
         if(refreshCount == sortList.size()){
-            Log.i("getSize",refreshCount+"");
-            ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
-            DecimalFormat df = new DecimalFormat("0.00");
-            for(int index=0;index<sortList.size();index++)
-            {
-                HashMap<String, Object> map = new HashMap<String, Object>();
-                map.put("symbol", sortList.get(index).symbol);
-                map.put("price", sortList.get(index).price);
-                map.put("change", df.format(sortList.get(index).change)+"("+df.format(sortList.get(index).change_per)+"%)");
-                listItem.add(map);
-                Log.i("change",sortList.get(index).symbol);
-            }
-            //生成适配器的Item和动态数组对应的元素
-//            listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
-//                    R.layout.favorite,//ListItem的XML实现
-//                    //动态数组与ImageItem对应的子项
-//                    new String[] {"symbol", "price","change"},
-//                    //ImageItem的XML文件里面的一个ImageView,两个TextView ID
-//                    new int[] {R.id.symbol,R.id.price,R.id.change}
-//            );
-            FavListAdapter fAdapter = new FavListAdapter(sortList);
-            //添加并且显示
-            listview.setAdapter(fAdapter);
-
-            //添加并且显示
-//            listview.setAdapter(listItemAdapter);
+            pb.setVisibility(View.GONE);
+//            Log.i("getSize",refreshCount+"");
+//            ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
+//            DecimalFormat df = new DecimalFormat("0.00");
+//            for(int index=0;index<sortList.size();index++)
+//            {
+//                HashMap<String, Object> map = new HashMap<String, Object>();
+//                map.put("symbol", sortList.get(index).symbol);
+//                map.put("price", sortList.get(index).price);
+//                map.put("change", df.format(sortList.get(index).change)+"("+df.format(sortList.get(index).change_per)+"%)");
+//                listItem.add(map);
+//                Log.i("change",sortList.get(index).symbol);
+//            }
+//            //生成适配器的Item和动态数组对应的元素
+////            listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
+////                    R.layout.favorite,//ListItem的XML实现
+////                    //动态数组与ImageItem对应的子项
+////                    new String[] {"symbol", "price","change"},
+////                    //ImageItem的XML文件里面的一个ImageView,两个TextView ID
+////                    new int[] {R.id.symbol,R.id.price,R.id.change}
+////            );
+//
+//
+//            //添加并且显示
+////            listview.setAdapter(listItemAdapter);
         }
     }
 

@@ -55,8 +55,8 @@ public class CurrentView  extends Fragment {
     static String[] itemTitle ={"Stock Symbol","Last Price","Change","Timestamp","Open","Close",
             "Day's Range","Volume","Indicators"};
     static String[] indicators = {"Price","SMA","EMA","STOCH","RSI","ADX","CCI","BBANDS","MACD"};
-    boolean canChange = false;
-    String preChoose = "Price";
+    boolean canChange = true;
+    String preChoose = "";
     View rootView;
     private ShareDialog shareDialog;
     private CallbackManager callbackManager;
@@ -126,9 +126,9 @@ public class CurrentView  extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 // your code here
-                Util.showToast(context, spinner.getSelectedItem().toString());
+//                Util.showToast(context, spinner.getSelectedItem().toString());
                 if(!spinner.getSelectedItem().toString().equals(preChoose)) {
-                    canChange = !canChange;
+                    canChange = true;
                     webView.loadUrl("javascript:testVariable()");
                     change.setTextColor(Color.BLACK);
                     preChoose = spinner.getSelectedItem().toString();
@@ -142,12 +142,13 @@ public class CurrentView  extends Fragment {
 
         });
 
-        change.setTextColor(Color.GRAY);
+        change.setTextColor(Color.BLACK);
         change.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
                 Log.i("onClick","change");
                 if(canChange) {
+                    webView.setVisibility(View.VISIBLE);
                     webView.post(new Runnable() {
                         @Override
                         public void run() {
@@ -155,7 +156,7 @@ public class CurrentView  extends Fragment {
                             webView.loadUrl("javascript:showChart('" + spinner.getSelectedItem().toString() + "')");
                         }
                     });
-                    canChange = !canChange;
+                    canChange = false;
                     change.setTextColor(Color.GRAY);
                 }
             }
