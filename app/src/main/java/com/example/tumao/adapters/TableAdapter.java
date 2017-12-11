@@ -1,4 +1,4 @@
-package com.example.tumao.myapplication;
+package com.example.tumao.adapters;
 
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
@@ -7,25 +7,32 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import java.text.DecimalFormat;
+import com.example.tumao.myapplication.R;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by tumao on 2017/11/30.
+ * An customized Adapter class for Stock detail table
  */
 class TableObj{
-    String itemTitle;
-    String itemValue;
-    int arrow = 0;
+    private String itemTitle;
+    private String itemValue;
     public TableObj(String itemTitle,String itemValue){
         this.itemTitle = itemTitle;
         this.itemValue = itemValue;
     }
+    public String getItemTitle(){
+        return this.itemTitle;
+    }
+
+    public String getItemValue(){
+        return this.itemValue;
+    }
 }
 public class TableAdapter extends BaseAdapter{
-    List<TableObj> list;
-    String[] values;
+    private List<TableObj> list;
     public TableAdapter(String[] values,String[] itemTitles){
         list = new ArrayList<>();
         for(int i=0;i<values.length;i++){
@@ -53,16 +60,14 @@ public class TableAdapter extends BaseAdapter{
             LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
             view = inflater.inflate(R.layout.innerlist,viewGroup,false);
         }
-        DecimalFormat df = new DecimalFormat("0.00");
         final TableObj tableObj = list.get(i);
         TextView itemTitle = view.findViewById(R.id.itemTitle);
         TextView itemValue = view.findViewById(R.id.itemValue);
-//        ImageView arrow = view.findViewById(R.id.arrow);
-        itemTitle.setText(tableObj.itemTitle);
-        itemValue.setText(tableObj.itemValue);
+        itemTitle.setText(tableObj.getItemTitle());
+        itemValue.setText(tableObj.getItemValue());
         if(i==2){
 
-            if(tableObj.itemValue.contains("-")){
+            if(tableObj.getItemValue().contains("-")){
                 Drawable drawable=view.getResources().getDrawable(R.drawable.down);
                 drawable.setBounds(0, 0, 70, 80);
                 itemValue.setCompoundDrawables(null,null,drawable,null);
@@ -71,19 +76,7 @@ public class TableAdapter extends BaseAdapter{
                 drawable.setBounds(0, 0, 70, 80);
                 itemValue.setCompoundDrawables(null,null,drawable,null);
             }
-//            arrow.setVisibility(View.VISIBLE);
         }
-//        symbol.setText(favObj.symbol);
-//        price.setText(String.valueOf(favObj.price));
-//        change.setText(String.valueOf(df.format(favObj.change)+"("+df.format(favObj.change_per)+"%)"));
-//        if(favObj.change>0){
-//            change.setTextColor(Color.GREEN);
-//        }else{
-//            change.setTextColor(Color.RED);
-//        }
-//        map.put("symbol", sortList.get(i).symbol);
-//        map.put("price", sortList.get(i).price);
-//        map.put("change", df.format(sortList.get(i).change)+"("+df.format(sortList.get(i).change_per)+"%)");
         return view;
     }
 }

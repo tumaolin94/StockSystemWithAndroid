@@ -34,33 +34,15 @@ public class StockActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stock);
         Intent intent =getIntent();
-        //getXxxExtra方法获取Intent传递过来的数据
-        String symbol=intent.getStringExtra("data");
+        String symbol=intent.getStringExtra("data"); // get data from other activity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle(symbol);
         setSupportActionBar(toolbar);
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
-//        Bundle bundle = new Bundle();
-//        bundle.putString("data",symbol);
-//        CurrentView cv = new CurrentView();
-//        HistoricalView hv = new HistoricalView();
-//        NewsView nv = new NewsView();
-//        cv.setArguments(bundle);
-//        hv.setArguments(bundle);
-//        nv.setArguments(bundle);
         FragmentManager fm = getSupportFragmentManager();
-//        FragmentTransaction transaction  = fm.beginTransaction();
-//        transaction.add(R.id.container, cv);
-//        transaction.add(R.id.container, hv);
-//        transaction.add(R.id.container, nv);
-//        transaction.commit();
         mSectionsPagerAdapter = new SectionsPagerAdapter(fm);
         mSectionsPagerAdapter.setSymbol(symbol);
-        // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager = (ViewPager) findViewById(R.id.container); // Set up the ViewPager with the sections adapter.
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
 
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));

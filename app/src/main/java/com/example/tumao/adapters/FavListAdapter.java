@@ -1,4 +1,4 @@
-package com.example.tumao.myapplication;
+package com.example.tumao.adapters;
 
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -7,11 +7,15 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.example.tumao.myapplication.FavObj;
+import com.example.tumao.myapplication.R;
+
 import java.text.DecimalFormat;
 import java.util.List;
 
 /**
  * Created by tumao on 2017/11/30.
+ * customized adapter for favorite list
  */
 
 public class FavListAdapter extends BaseAdapter{
@@ -45,17 +49,14 @@ public class FavListAdapter extends BaseAdapter{
         TextView price = view.findViewById(R.id.price);
         TextView symbol = view.findViewById(R.id.symbol);
         TextView change = view.findViewById(R.id.change);
-        symbol.setText(favObj.symbol);
-        price.setText(String.valueOf(favObj.price));
-        change.setText(String.valueOf(df.format(favObj.change)+"("+df.format(favObj.change_per)+"%)"));
-        if(favObj.change>0){
+        symbol.setText(favObj.getSymbol());
+        price.setText(String.valueOf(favObj.getPrice()));
+        change.setText(String.valueOf(df.format(favObj.getChange())+"("+df.format(favObj.getChange_per())+"%)"));
+        if(favObj.getChange()>0){
             change.setTextColor(Color.GREEN);
         }else{
             change.setTextColor(Color.RED);
         }
-//        map.put("symbol", sortList.get(i).symbol);
-//        map.put("price", sortList.get(i).price);
-//        map.put("change", df.format(sortList.get(i).change)+"("+df.format(sortList.get(i).change_per)+"%)");
         return view;
     }
 }

@@ -1,4 +1,6 @@
-package com.example.tumao.myapplication;
+package com.example.tumao.util;
+
+import com.example.tumao.myapplication.FavObj;
 
 import java.util.Comparator;
 
@@ -22,7 +24,7 @@ public class FavComparator implements Comparator<FavObj> {
                 break;
             }
             case "Symbol":{
-                res = obj1.symbol.compareTo(obj2.symbol);
+                res = obj1.getSymbol().compareTo(obj2.getSymbol());
                 break;
             }
             case "Price":{

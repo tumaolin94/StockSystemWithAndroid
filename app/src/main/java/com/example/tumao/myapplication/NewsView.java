@@ -134,16 +134,13 @@ public class NewsView  extends Fragment {
                                 map.put("link", linkList.get(i));
                                 listItem.add(map);
                             }
-                            //生成适配器的Item和动态数组对应的元素
-                            SimpleAdapter listItemAdapter = new SimpleAdapter(context,listItem,//数据源
-                                    R.layout.newslist,//ListItem的XML实现
-                                    //动态数组与ImageItem对应的子项
+                            //adapter for listview
+                            SimpleAdapter listItemAdapter = new SimpleAdapter(context,listItem,
+                                    R.layout.newslist,
                                     new String[] {"title", "author","date"},
-                                    //ImageItem的XML文件里面的一个ImageView,两个TextView ID
                                     new int[] {R.id.title,R.id.author,R.id.date}
                             );
 
-                            //添加并且显示
                             listview.setAdapter(listItemAdapter);
                             listview.setVisibility(View.VISIBLE);
                             pb.setVisibility(View.GONE);

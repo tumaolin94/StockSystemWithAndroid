@@ -2,10 +2,11 @@ package com.example.tumao.myapplication;
 
 /**
  * Created by tumao on 2017/11/29.
+ * Favorite Stock Object
  */
 
 public class FavObj {
-    String symbol;
+    private String symbol;
     double price;
     double change;
     double change_per;
@@ -29,6 +30,9 @@ public class FavObj {
     public Double getChange_per(){
         return new Double(change_per);
     }
-
+    public String getSymbol(){ return symbol; };
+    public void setSymbol(String symbol){
+        this.symbol = symbol;
+    }
 
 }

@@ -41,8 +41,6 @@ public class HistoricalView  extends Fragment {
         final ProgressBar pb = (ProgressBar)rootView.findViewById(R.id.progressBar_his);
         final TextView tv = (TextView)rootView.findViewById(R.id.error_his);
         pb.setVisibility(View.VISIBLE);
-//        pb.setVisibility(View.GONE);
-//        tv.setVisibility(View.VISIBLE);
         webView.setVisibility(View.GONE);
         webView.loadUrl(testURL);
         Log.i("Historical",testURL);
@@ -53,7 +51,6 @@ public class HistoricalView  extends Fragment {
                 webView.evaluateJavascript("javascript:submitSymbol('"+symbol+"')", new ValueCallback<String>() {
                     @Override
                     public void onReceiveValue(String value) {
-                        //此处为 js 返回的结果
                         Log.i("HisreturnJS",value);
                         if(value.equals("true")){
                             webView.setVisibility(View.VISIBLE);

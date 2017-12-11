@@ -37,6 +37,10 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.tumao.util.FavComparator;
+import com.example.tumao.util.Util;
+import com.example.tumao.adapters.FavListAdapter;
+import com.example.tumao.adapters.SingleArrayAdapter;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -53,25 +57,29 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
-//    SimpleAdapter listItemAdapter;
     List<FavObj> sortList = new ArrayList<>();
     int refreshCount = 0;
+    int deletePosition = 0;
+    int selectedsortPositon = 0;
+    int selectedorderPositon = 0;
     ListView listview ;
     AutoCompleteTextView actv;
     ArrayAdapter<String> adapter;
     Context context;
-    int deletePosition = 0;
-    int selectedsortPositon = 0;
-    int selectedorderPositon = 0;
+
     boolean validName = false;
     private Timer timer;
     ProgressBar pb;
+    /*
+    * TimerTask for AutoRefresh
+    * */
     private TimerTask task = new TimerTask() {
         @Override
         public void run() {
             refresh(sortList,pb);
         }
     };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         adapter = new SingleArrayAdapter
                 (this, android.R.layout.select_dialog_item, new String[0]);
         //Getting the instance of AutoCompleteTextView
-        actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
+        actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView); //AutoCompleteTextView
         actv.setGravity(Gravity.CENTER);
         actv.setThreshold(1);//will start working from first character
         actv.setAdapter(adapter);//setting the adapter data into the AutoCompleteTextView
@@ -88,21 +96,27 @@ public class MainActivity extends AppCompatActivity {
         final TextView clear = findViewById(R.id.textView3);
         pb = (ProgressBar)findViewById(R.id.progressBar) ;
         final Switch sw = (Switch)findViewById(R.id.switch1);
-        pb.setVisibility(View.GONE);
         listview = findViewById(R.id.favlist);
+        List<FavObj> list = new ArrayList<>();
+        Gson gson = new Gson();
+        SharedPreferences settings = getApplicationContext().getSharedPreferences("setting", 0);
+        pb.setVisibility(View.GONE);
+        /*
+        * AutoCompleteTextView ClikListener
+        * */
         actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Object listItem = parent.getItemAtPosition(position);
                 String temp = listItem.toString();
-//                String symbol = temp.substring(0,temp.indexOf("-"));
                 Log.i("ItemClick",temp);
-//                Toast.makeText(getApplicationContext(),(CharSequence)symbol, Toast.LENGTH_LONG).show();
                 actv.setAdapter(null);
                 actv.setText(temp);
-//                actv.showDropDown();
             }
         });
+        /*
+        * AutoCompleteTextView TextChangedListener
+        * */
         actv.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -124,9 +138,6 @@ public class MainActivity extends AppCompatActivity {
                     if(!validation(actv)){
                         jsonRequest(actv.getText().toString(), adapter,pb);
                         adapter.notifyDataSetChanged();
-//                        actv.setAdapter(adapter);
-//                    Log.i("jsonRequest",actv.getAdapter().getCount()+"");
-//                        actv.showDropDown();
                     }
 
                 }
@@ -134,7 +145,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+        /*
+        * getQuote ClickListener
+        * */
         getQuote.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
@@ -156,6 +169,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        /*
+        * Clear ClickListener
+        * */
         clear.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
@@ -165,41 +181,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-//        DecimalFormat df = new DecimalFormat("0.00");
-//        ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
-//        for(int i=0;i<list.size();i++)
-//        {
-//            HashMap<String, Object> map = new HashMap<String, Object>();
-//            map.put("symbol", list.get(i).symbol);
-//            map.put("price", list.get(i).price);
-//            map.put("change", df.format(list.get(i).change)+"("+df.format(list.get(i).change_per)+"%)");
-//            listItem.add(map);
-//            Log.i("change",list.get(i).symbol);
-//        }
-//        //生成适配器的Item和动态数组对应的元素
-//        listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
-//                R.layout.favorite,//ListItem的XML实现
-//                //动态数组与ImageItem对应的子项
-//                new String[] {"symbol", "price","change"},
-//                //ImageItem的XML文件里面的一个ImageView,两个TextView ID
-//                new int[] {R.id.symbol,R.id.price,R.id.change}
-//        );
-        List<FavObj> list = new ArrayList<>();
-        Gson gson = new Gson();
-        SharedPreferences settings = getApplicationContext().getSharedPreferences("setting", 0);
-
         String oldList = settings.getString("save_data","");
         Log.i("Mainloaddata",oldList);
         if(!oldList.equals("")){
             list = gson.fromJson(oldList,new TypeToken<List<FavObj>>(){}.getType());
         }
         FavListAdapter fAdapter = new FavListAdapter(list);
-        //添加并且显示
+        //add and show list
         listview.setAdapter(fAdapter);
         sortList = list;
         String[] sortItems = getResources().getStringArray(R.array.sortBy);
         String[] orderItems = getResources().getStringArray(R.array.order);
+
+        //adapter for sort Spinner
         ArrayAdapter<String> sortAdapter = new ArrayAdapter<String>(
                 this, android.R.layout.simple_spinner_dropdown_item,sortItems){
             @Override
@@ -222,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 return view;
             }
         };
+        //adapter for order Spinner
         ArrayAdapter<String> orderAdapter = new ArrayAdapter<String>(
                 this, android.R.layout.simple_spinner_dropdown_item,orderItems){
             @Override
@@ -244,44 +239,22 @@ public class MainActivity extends AppCompatActivity {
                 return view;
             }
         };
+
         final Spinner sortby = findViewById(R.id.spinner2);
         sortby.setAdapter(sortAdapter);
         final Spinner order = findViewById(R.id.spinner3);
         order.setAdapter(orderAdapter);
 
-
         sortby.setOnItemSelectedListener(new OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 // your code here
-//                Util.showToast(getApplicationContext(), spinner.getSelectedItem().toString());
                 Log.i("Sort by",sortby.getSelectedItem().toString());
                 Log.i("Sort by",position+"");
                 Collections.sort(sortList,new FavComparator(sortby.getSelectedItem().toString(),order.getSelectedItem().toString()));
-//                ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
-//                DecimalFormat df = new DecimalFormat("0.00");
-//                for(int i=0;i<sortList.size();i++)
-//                {
-//                    HashMap<String, Object> map = new HashMap<String, Object>();
-//                    map.put("symbol", sortList.get(i).symbol);
-//                    map.put("price", sortList.get(i).price);
-//                    map.put("change", df.format(sortList.get(i).change)+"("+df.format(sortList.get(i).change_per)+"%)");
-//                    listItem.add(map);
-//                    Log.i("change",sortList.get(i).symbol);
-//                }
-//                //生成适配器的Item和动态数组对应的元素
-//                listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
-//                        R.layout.favorite,//ListItem的XML实现
-//                        //动态数组与ImageItem对应的子项
-//                        new String[] {"symbol", "price","change"},
-//                        //ImageItem的XML文件里面的一个ImageView,两个TextView ID
-//                        new int[] {R.id.symbol,R.id.price,R.id.change}
-//                );
                 selectedsortPositon = position;
                 FavListAdapter fAdapter = new FavListAdapter(sortList);
-                //添加并且显示
                 listview.setAdapter(fAdapter);
-//                listview.setAdapter(listItemAdapter);
             }
 
             @Override
@@ -294,34 +267,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 // your code here
-//                Util.showToast(getApplicationContext(), spinner.getSelectedItem().toString());
-                Log.i("Sort by",order.getSelectedItem().toString());
-                Collections.sort(sortList,new FavComparator(sortby.getSelectedItem().toString(),order.getSelectedItem().toString()));
-//                ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
-//                DecimalFormat df = new DecimalFormat("0.00");
-//                for(int i=0;i<sortList.size();i++)
-//                {
-//                    HashMap<String, Object> map = new HashMap<String, Object>();
-//                    map.put("symbol", sortList.get(i).symbol);
-//                    map.put("price", sortList.get(i).price);
-//                    map.put("change", df.format(sortList.get(i).change)+"("+df.format(sortList.get(i).change_per)+"%)");
-//                    listItem.add(map);
-//                    Log.i("change",sortList.get(i).symbol);
-//                }
-//                //生成适配器的Item和动态数组对应的元素
-//                listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
-//                        R.layout.favorite,//ListItem的XML实现
-//                        //动态数组与ImageItem对应的子项
-//                        new String[] {"symbol", "price","change"},
-//                        //ImageItem的XML文件里面的一个ImageView,两个TextView ID
-//                        new int[] {R.id.symbol,R.id.price,R.id.change}
-//                );
                 selectedorderPositon = position;
                 FavListAdapter fAdapter = new FavListAdapter(sortList);
-                //添加并且显示
                 listview.setAdapter(fAdapter);
-                //添加并且显示
-//                listview.setAdapter(listItemAdapter);
             }
 
             @Override
@@ -347,7 +295,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent i = new Intent(MainActivity.this, StockActivity.class);
                 FavObj itemObj = (FavObj)listview.getItemAtPosition(position);
 
-                String symbol = itemObj.symbol;
+                String symbol = itemObj.getSymbol();
                 i.putExtra("data",symbol.toUpperCase());
                 startActivity(i);
 
@@ -359,10 +307,7 @@ public class MainActivity extends AppCompatActivity {
             public boolean onItemLongClick(AdapterView<?> parent, View view,
                                            int position, long id) {
                 FavObj itemObj = (FavObj)listview.getItemAtPosition(position);
-                String item = itemObj.symbol;
-
-//                Toast.makeText(getBaseContext(), item + "Chosen",
-//                        Toast.LENGTH_SHORT).show();
+                String item = itemObj.getSymbol();
                 deletePosition = position;
                 return false;
             }
@@ -384,12 +329,10 @@ public class MainActivity extends AppCompatActivity {
 
                 if(isChecked) {
                     pb.setVisibility(View.VISIBLE);
-                    //选中时 do some thing
                     Log.i("switch","startAutoRefresh");
                     timer = new Timer();
-                    // 参数：
-                    // 1000，延时1秒后执行。
-                    // 2000，每隔2秒执行1次task。
+                    // 1000，delay 1 second。
+                    // 5000，execute per 5 second。
                     timer.schedule(task, 1000, 5000);
                 } else {
                     //非选中时 do some thing
@@ -397,14 +340,15 @@ public class MainActivity extends AppCompatActivity {
                     timer.cancel();
                     task.cancel();
                 }
-
             }
         });
         refresh(sortList,pb);
     }
+    /*
+    * save favorite data to local storage
+    * */
     public void saveLocal(){
         Gson gson = new Gson();
-//                String url = "";
         Log.i("star","star");
 //1、open Preferences
         SharedPreferences settings = context.getSharedPreferences("setting", 0);
@@ -418,6 +362,10 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("save_data",newList);
         editor.commit();
     }
+    /*
+    *
+    * @Parameter item: the item chosen
+    * */
     public boolean onContextItemSelected(MenuItem item) {
 
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
@@ -436,7 +384,6 @@ public class MainActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
                 sortList.remove(deletePosition);
                 Gson gson = new Gson();
-//                String url = "";
                 Log.i("star","star");
 //1、open Preferences
                 SharedPreferences settings = context.getSharedPreferences("setting", 0);
@@ -446,11 +393,9 @@ public class MainActivity extends AppCompatActivity {
                 editor.commit();
                 String newList = gson.toJson(sortList);
                 Log.i("newsortList ",newList);
-
                 editor.putString("save_data",newList);
                 editor.commit();
                 FavListAdapter fAdapter = new FavListAdapter(sortList);
-                //添加并且显示
                 listview.setAdapter(fAdapter);
             break;
 
@@ -475,12 +420,10 @@ public class MainActivity extends AppCompatActivity {
         }
         FavListAdapter fAdapter = new FavListAdapter(list);
         sortList = list;
-        //添加并且显示
         listview.setAdapter(fAdapter);
         refresh(sortList,pb);
     }
     public boolean validation(AutoCompleteTextView actv){
-//        int length = actv.getText().replace(/\s/g, '').length();
         String text= actv.getText().toString();
         int length = text.replaceAll("\\s","").length();
         Log.i("length",length+"");
@@ -500,7 +443,6 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onResponse(JSONArray  response) {
-//                    mTxtDisplay.setText("Response: " + response.toString());
                         Log.i("Autocomplete",response.toString());
                         try {
                             if(response.length()!=0){
@@ -513,8 +455,6 @@ public class MainActivity extends AppCompatActivity {
                                     altArray [i] = temp.getString("Symbol")+"-"+temp.getString("Name")+"("+temp.getString("Exchange")+")";
                                     Log.i("Inner",altArray[i]);
                                 }
-//                            adapter.clear();
-//                            adapter.addAll(altArray);
                                 displayAuto(altArray);
                                 Log.i("jsonRequest","beforeshowDropDown");
                                 actv.showDropDown();
@@ -538,10 +478,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         requestQueue.add(jsObjRequest);
     }
+
     public void displayAuto(String[] altArray){
         if(altArray.length!=0){
             adapter = new SingleArrayAdapter
@@ -554,14 +494,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void refresh(List<FavObj> sortList,final ProgressBar pb){
-//        pb.setVisibility(View.VISIBLE);
         for(int i=0;i<sortList.size();i++){
-            String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+sortList.get(i).symbol;
+            String url = "http://newphp-nodejs-env.rakp9pisrm.us-west-1.elasticbeanstalk.com/symbol?symbol="+sortList.get(i).getSymbol();
             refreshRequest(i,url,getApplicationContext(),pb);
         }
     }
     public void refreshRequest(final int i, String url, Context context,final ProgressBar pb){
-        if(sortList.get(i).symbol.contains("-")) return;
+        if(sortList.get(i).getSymbol().contains("-")) return;
 
         Log.i("beforerefreshRequest",url);
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
@@ -632,7 +571,6 @@ public class MainActivity extends AppCompatActivity {
                         Log.e("error",error.toString());
                     }
                 });
-//        Log.i("innerend",values[0]);
         RequestQueue requestQueue = Volley.newRequestQueue(context);
         jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(10000,3,DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         requestQueue.add(jsObjRequest);
@@ -649,42 +587,17 @@ public class MainActivity extends AppCompatActivity {
         Log.i("RefreshfavObj ",change_per+"");
         if(i>=sortList.size()) return;
         FavObj favobj = sortList.get(i);
-        sortList.get(i).symbol=values[0];
+        sortList.get(i).setSymbol(values[0]);
         sortList.get(i).price=Double.parseDouble(values[1]);
         sortList.get(i).change=change;
         sortList.get(i).change_per=change_per;
         refreshCount++;
         FavListAdapter fAdapter = new FavListAdapter(sortList);
-        //添加并且显示
         listview.setAdapter(fAdapter);
         saveLocal();
         pb.setVisibility(View.GONE);
         if(refreshCount == sortList.size()){
             pb.setVisibility(View.GONE);
-//            Log.i("getSize",refreshCount+"");
-//            ArrayList<HashMap<String, Object>> listItem = new ArrayList<HashMap<String, Object>>();
-//            DecimalFormat df = new DecimalFormat("0.00");
-//            for(int index=0;index<sortList.size();index++)
-//            {
-//                HashMap<String, Object> map = new HashMap<String, Object>();
-//                map.put("symbol", sortList.get(index).symbol);
-//                map.put("price", sortList.get(index).price);
-//                map.put("change", df.format(sortList.get(index).change)+"("+df.format(sortList.get(index).change_per)+"%)");
-//                listItem.add(map);
-//                Log.i("change",sortList.get(index).symbol);
-//            }
-//            //生成适配器的Item和动态数组对应的元素
-////            listItemAdapter = new SimpleAdapter(getApplicationContext(),listItem,//数据源
-////                    R.layout.favorite,//ListItem的XML实现
-////                    //动态数组与ImageItem对应的子项
-////                    new String[] {"symbol", "price","change"},
-////                    //ImageItem的XML文件里面的一个ImageView,两个TextView ID
-////                    new int[] {R.id.symbol,R.id.price,R.id.change}
-////            );
-//
-//
-//            //添加并且显示
-////            listview.setAdapter(listItemAdapter);
         }
     }
 
